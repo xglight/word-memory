@@ -1,0 +1,14 @@
+{
+  "words": {
+    "size": 14,
+    "definition": "none",
+    "sound": "none"
+  },
+  "sound": {
+    "speed": 50
+  },
+  "wordLists": {
+    "path": "wordList",
+    "default": "example"
+  }
+}
