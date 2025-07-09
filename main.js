@@ -1,8 +1,10 @@
 const { ipcMain } = require('electron')
 const { app, BrowserWindow } = require('electron/main')
 const { exec } = require('child_process')
+const { promisify } = require('util')
 const path = require('node:path')
 const fs = require('fs/promises')
+const execAsync = promisify(exec)
 const ESPEAK_PATH = path.join(__dirname, 'espeak', 'bin', 'espeak.exe')
 
 wordListPath = '.\\wordlist'
@@ -147,12 +149,16 @@ ipcMain.handle('getConfig', () => {
 })
 
 ipcMain.handle('speak', async (event, text) => {
-    exec(`${ESPEAK_PATH} -s ${config.sound.speed} "${text}"`, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Error executing espeak:`, error)
-            throw error
+    try {
+        await execAsync(`${ESPEAK_PATH} -s ${config.sound.speed} "${text}"`)
+        return { success: true }
+    } catch (error) {
+        console.error('语音合成错误:', error)
+        return { 
+            success: false,
+            error: error.message
         }
-    })
+    }
 })
 
 ipcMain.handle('changeLove', async (event, word) => {
