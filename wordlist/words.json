@@ -1,0 +1,29 @@
+{
+    "apple": {
+        "word": "apple",
+        "definition": [
+            "n. 苹果"
+        ],
+        "lastReviewed": null,
+        "cnt": 0,
+        "mastery": 0
+    },
+    "banana": {
+        "word": "banana",
+        "definition": [
+            "n. 香蕉"
+        ],
+        "lastReviewed": null,
+        "cnt": 0,
+        "mastery": 0
+    },
+    "computer": {
+        "word": "computer",
+        "definition": [
+            "n. 计算机"
+        ],
+        "lastReviewed": null,
+        "cnt": 0,
+        "mastery": 0
+    }
+}
