@@ -124,14 +124,22 @@ ipcMain.handle('updateWordList', async (event, wordList) => {
     return true
 })
 
-ipcMain.handle('getWords', async () => {
+ipcMain.handle('getWords', async (event, page = 0, pageSize = 20) => {
     const filePath = path.join(wordListPath, currentWordList + '.json')
     const data = await fs.readFile(filePath, 'utf-8')
     const wordList = JSON.parse(data).words
     let result = []
-    for (let i = 0; i < wordList.length; i++)
+    const start = page * pageSize
+    const end = Math.min(start + pageSize, wordList.length)
+    for (let i = start; i < end; i++) {
         result.push(words[wordList[i]])
-    return result
+    }
+    return {
+        words: result,
+        total: wordList.length,
+        page,
+        pageSize
+    }
 })
 
 ipcMain.handle('getConfig', () => {

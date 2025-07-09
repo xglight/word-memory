@@ -8,7 +8,7 @@ contextBridge.exposeInMainWorld('wordMemoryAPI', {
   // 修改单词表
   updateWordList: async (wordList) => ipcRenderer.invoke('updateWordList', wordList),
   // 获取单词列表
-  getWords: async () => ipcRenderer.invoke('getWords'),
+  getWords: async (page = 0, pageSize = 20) => ipcRenderer.invoke('getWords', page, pageSize),
   // 获取 config
   getConfig: async () => ipcRenderer.invoke('getConfig'),
   // 朗读单词

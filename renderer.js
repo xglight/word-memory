@@ -10,9 +10,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const nextBtn = document.getElementById('next-btn')
     const flipBtn = document.getElementById('flip-btn')
     const copyBtn = document.getElementById('copy-btn')
-    const speakBtn = document.getElementById('speak-btn')
     const lovebtn = document.getElementById('favorite-btn')
     const easyBtn = document.getElementById('easy-btn')
+    const speakBtn = document.getElementById('speak-btn')
 
     // 加载单词列表
     let words = []
@@ -29,14 +29,37 @@ document.addEventListener('DOMContentLoaded', async () => {
         config = await window.wordMemoryAPI.getConfig()
     }
 
+    let currentPage = 0
+    const pageSize = 20
+    let totalWords = 0
+
     async function loadWords() {
         try {
             console.log('Loading words...')
-            words = await window.wordMemoryAPI.getWords()
+            const response = await window.wordMemoryAPI.getWords(currentPage, pageSize)
+            words = response.words
+            totalWords = response.total
             showCurrentWord()
+            updatePageSelector()
         } catch (err) {
             console.error('Failed to load words:', err)
             wordElement.textContent = '无单词数据'
+        }
+    }
+
+    function updatePageSelector() {
+        const pageSelector = document.getElementById('page-selector')
+        if (!pageSelector) return
+
+        const totalPages = Math.ceil(totalWords / pageSize)
+        pageSelector.innerHTML = ''
+
+        for (let i = 0; i < totalPages; i++) {
+            const option = document.createElement('option')
+            option.value = i
+            option.textContent = `第${i + 1}节`
+            if (i === currentPage) option.selected = true
+            pageSelector.appendChild(option)
         }
     }
 
@@ -61,10 +84,91 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('Current list:', currentList)
         wordListSelect.value = currentList
         await loadWords()
+        await renderWordList()
+    }
+
+    async function renderWordList() {
+        const wordListElement = document.getElementById('word-list')
+        if (!wordListElement) {
+            console.error('Word list element not found')
+            return
+        }
+
+        try {
+            console.log('Fetching all words...')
+            // 使用分页方式获取所有单词
+            let allWords = []
+            let page = 0
+            let hasMore = true
+
+            while (hasMore) {
+                const response = await window.wordMemoryAPI.getWords(page, pageSize)
+                console.log(`Loaded page ${page} with ${response.words.length} words`)
+
+                allWords = allWords.concat(response.words)
+                hasMore = (page + 1) * pageSize < response.total
+                page++
+            }
+
+            console.log(`Total words loaded: ${allWords.length}`)
+
+            // 清空现有列表
+            wordListElement.innerHTML = ''
+
+            if (allWords.length === 0) {
+                console.log('No words to display')
+                const emptyMsg = document.createElement('li')
+                emptyMsg.textContent = '无单词数据'
+                wordListElement.appendChild(emptyMsg)
+                return
+            }
+
+            // 使用文档片段优化性能
+            const fragment = document.createDocumentFragment()
+
+            // 创建列表项
+            allWords.forEach((word, index) => {
+                const li = document.createElement('li')
+                li.textContent = word.word
+                li.dataset.index = index
+
+                // 高亮当前单词
+                li.classList.toggle('highlight', index === currentIndex)
+
+                // 点击事件
+                li.addEventListener('click', () => {
+                    currentIndex = index
+                    showCurrentWord()
+                    updateWordListHighlight()
+                })
+
+                fragment.appendChild(li)
+            })
+
+            wordListElement.appendChild(fragment)
+            console.log('Word list rendered successfully')
+        } catch (err) {
+            console.error('Failed to render word list:', err)
+            wordListElement.innerHTML = '<li style="color:red">加载单词列表失败</li>'
+        }
+    }
+
+    function updateWordListHighlight() {
+        const items = document.querySelectorAll('#word-list li')
+        items.forEach((item, index) => {
+            item.classList.toggle('highlight', index === currentIndex)
+        })
     }
 
     // 初始加载
     await init()
+
+    // 处理节切换
+    document.getElementById('page-selector').addEventListener('change', async (e) => {
+        currentPage = parseInt(e.target.value)
+        currentIndex = 0
+        await loadWords()
+    })
 
     // 处理单词列表切换
     wordListSelect.addEventListener('change', async () => {
@@ -97,6 +201,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             lovebtn.classList.remove('active')
             easyBtn.classList.remove('active')
             definitionElement.style.display = 'none'
+            updateWordListHighlight()
             return
         }
 
@@ -149,6 +254,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (currentIndex > 0) {
             currentIndex--
             showCurrentWord()
+            updateWordListHighlight()
         }
     })
 
@@ -157,6 +263,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (currentIndex < words.length - 1) {
             currentIndex++
             showCurrentWord()
+            updateWordListHighlight()
         }
     })
 
