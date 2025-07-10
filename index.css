@@ -7,6 +7,8 @@ html {
     height: 100%;
     font-family: sans-serif;
     background-color: #e6f0ff;
+    user-select: none;
+    -webkit-user-select: none;
     /* 淡蓝背景喵 */
 }
 
@@ -32,10 +34,42 @@ html {
 .selector-container {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     height: 39px;
     padding: 0 10px;
     background-color: #d6eaff;
     border-bottom: 1px solid #a2c3ff;
+}
+
+#settings-btn {
+    background: rgba(255, 255, 255, 0.9);
+    color: #0056b3;
+    border: none;
+    padding: 10px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: text;
+    -webkit-user-select: text;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+#settings-btn:hover {
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 6px 16px rgba(0, 123, 255, 0.3);
+    transform: translateY(-3px) scale(1.05);
+}
+
+#settings-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0, 123, 255, 0.2);
 }
 
 .selector-container select {
@@ -48,6 +82,8 @@ html {
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    user-select: text;
+    -webkit-user-select: text;
 }
 
 .selector-container select:hover {
@@ -130,31 +166,74 @@ html {
     flex-wrap: wrap;
 }
 
-.word-card-buttons button,
-.controls button {
-    background: linear-gradient(135deg, #007BFF 0%, #0056b3 100%);
-    color: white;
+.word-card-buttons {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 4px;
+}
+
+.word-card-buttons button {
+    background: rgba(255, 255, 255, 0.9);
+    color: #0056b3;
     border: none;
-    padding: 8px 16px;
+    padding: 10px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: text;
+    -webkit-user-select: text;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.word-card-buttons button:hover {
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 6px 16px rgba(0, 123, 255, 0.3);
+    transform: translateY(-3px) scale(1.05);
+}
+
+.word-card-buttons button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0, 123, 255, 0.2);
+}
+
+
+.controls button {
+    background: rgba(255, 255, 255, 0.9);
+    color: #0056b3;
+    border: none;
+    padding: 8px 20px;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     font-weight: 500;
     letter-spacing: 0.5px;
+    user-select: text;
+    -webkit-user-select: text;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-.word-card-buttons button:hover,
 .controls button:hover {
-    background: linear-gradient(135deg, #0069d9 0%, #004a9c 100%);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 6px 16px rgba(0, 123, 255, 0.3);
+    transform: translateY(-2px) scale(1.05);
 }
 
-.word-card-buttons button:active,
 .controls button:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transform: translateY(0) scale(1);
+    box-shadow: 0 2px 6px rgba(0, 123, 255, 0.2);
 }
 
 /* 收藏按钮active状态 */
@@ -175,14 +254,22 @@ html {
     background: linear-gradient(135deg, #2FB350 0%, #24963D 100%);
 }
 
+/* 困难按钮active状态 */
+#hard-btn.active {
+    background: linear-gradient(135deg, #FF3B30 0%, #D70015 100%);
+}
+
+#hard-btn.active:hover {
+    background: linear-gradient(135deg, #E5352B 0%, #C50013 100%);
+}
+
 .controls {
     display: flex;
     justify-content: space-around;
     align-items: center;
     height: 40px;
     padding: 0 10px;
-    border-top: 1px solid #a2c3ff;
-    background-color: #d6eaff;
+    border-top: 1px solid rgb(162, 195, 255, 0.5);
     border-radius: 0 0 12px 12px;
 }
 
@@ -237,12 +324,63 @@ html {
 }
 
 .word-list li.highlight {
-    background: linear-gradient(135deg, #007BFF 0%, #0056b3 100%);
-    color: white;
+    background: rgba(0, 123, 255, 0.1);
+    color: #0056b3;
     font-weight: 500;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    transform: translateY(-1px);
-    border-radius: 4px;
+    transform: translateY(-2px);
+    border-radius: 8px;
     margin: 2px 0;
+    border-left: 3px solid #007BFF;
+    backdrop-filter: blur(5px);
+}
+
+.word-list li.highlight:hover {
+    background: rgba(0, 123, 255, 0.15);
+    box-shadow: 0 6px 16px rgba(0, 123, 255, 0.3);
+    transform: translateY(-3px);
+}
+
+.voice-selector-container {
+    position: relative;
+    display: inline-block;
+}
+
+.voice-selector {
+    position: absolute;
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    padding: 6px 12px;
+    border: 1px solid #a2c3ff;
+    border-radius: 6px;
+    background-color: #ffffff;
+    color: #0056b3;
+    font-size: 0.9em;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    z-index: 20;
+    min-width: 100px;
+}
+
+.speak-btn:hover + .voice-selector-container .voice-selector,
+.voice-selector:hover {
+    opacity: 1;
+    visibility: visible;
+    top: -36px;
+}
+
+.voice-selector:hover {
+    border-color: #007BFF;
+    box-shadow: 0 1px 6px rgba(0, 123, 255, 0.3);
+}
+
+.voice-selector:focus {
+    outline: none;
+    border-color: #007BFF;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
 }

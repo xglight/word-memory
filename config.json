@@ -5,10 +5,16 @@
     "sound": "none"
   },
   "sound": {
-    "speed": 170
+    "speed": 175
   },
   "wordLists": {
-    "path": "wordList",
-    "default": "example"
+    "path": "wordlist",
+    "default": "example",
+    "lists": [
+      "example",
+      "love",
+      "easy",
+      "hard"
+    ]
   }
 }

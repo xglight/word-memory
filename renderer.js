@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const copyBtn = document.getElementById('copy-btn')
     const lovebtn = document.getElementById('favorite-btn')
     const easyBtn = document.getElementById('easy-btn')
+    const hardBtn = document.getElementById('hard-btn')
     const speakBtn = document.getElementById('speak-btn')
 
     // 加载单词列表
@@ -174,7 +175,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     wordListSelect.addEventListener('change', async () => {
         try {
             console.log('Attempting to change word list to:', wordListSelect.value)
-            const success = await window.wordMemoryAPI.updateWordList(wordListSelect.value)
+            const success = await window.wordMemoryAPI.setCurrentWordList(wordListSelect.value)
             if (!success) {
                 console.error('Failed to update word list in main process')
                 return
@@ -218,7 +219,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         definitionElement.style.display = 'block'
         definitionElement.textContent = definition
 
-        phoneticElement.textContent = word.phonetic
+        // 拼接 phonetic
+        let phonetic = ''
+        for (let i = 0; i < word.phonetic.length; i++)
+            phonetic += word.phonetic[i] + ' '
+        phoneticElement.textContent = phonetic
 
         // 更新单词序号显示
         wordIndexElement.textContent = `${currentIndex + 1}/${words.length}`
@@ -268,10 +273,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     })
 
     // 朗读单词
+    const voiceTypeSelect = document.getElementById('voice-type')
+
     speakBtn.addEventListener('click', async () => {
         try {
             const word = words[currentIndex].word
-            await window.wordMemoryAPI.speak(word)
+            const voiceType = voiceTypeSelect.value
+            await window.wordMemoryAPI.speak(word, voiceType)
 
             // 显示反馈
             const originalTitle = speakBtn.getAttribute('title')
@@ -356,6 +364,35 @@ document.addEventListener('DOMContentLoaded', async () => {
             setTimeout(() => {
                 easyBtn.style.animation = ''
             }, 500)
+        }
+    })
+
+    hardBtn.addEventListener('click', async () => {
+        try {
+            await window.wordMemoryAPI.changeHard(words[currentIndex].word)
+            // 切换active样式
+            hardBtn.classList.toggle('active')
+            words[currentIndex].hard = !words[currentIndex].hard
+            // 添加点击动画
+            hardBtn.style.transform = 'scale(1.2)'
+            setTimeout(() => {
+                hardBtn.style.transform = 'scale(1)'
+            }, 300)
+        } catch (err) {
+            console.error('困难失败:', err)
+            hardBtn.style.animation = 'shake 0.5s'
+            setTimeout(() => {
+                hardBtn.style.animation = ''
+            }, 500)
+        }
+    })
+
+    // 添加快捷键支持：左右箭头导航
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowLeft') {
+            prevBtn.click()
+        } else if (event.key === 'ArrowRight') {
+            nextBtn.click()
         }
     })
 })

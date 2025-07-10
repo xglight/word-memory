@@ -2,36 +2,48 @@
   "apple": {
     "word": "apple",
     "definition": [
-      "n. 苹果"
+      "n. 苹果公司；【植】苹果；【植】苹果树"
     ],
-    "phonetic": "/ˈæp.əl/",
+    "phonetic": [
+      "美: /ˈæp(ə)l/",
+      "英: /ˈæpl/"
+    ],
     "lastReviewed": null,
     "love": false,
     "easy": false,
+    "hard": false,
     "cnt": 0,
     "mastery": 0
   },
   "banana": {
     "word": "banana",
     "definition": [
-      "n. 香蕉"
+      "n. 【食】香蕉"
     ],
-    "phonetic": "/bəˈnɑːnə/",
+    "phonetic": [
+      "美: /bəˈnɑːnə/",
+      "英: /bəˈnɑːnə/"
+    ],
     "lastReviewed": null,
     "love": false,
     "easy": false,
+    "hard": false,
     "cnt": 0,
     "mastery": 0
   },
   "computer": {
     "word": "computer",
     "definition": [
-      "n. 计算机"
+      "n. 计算机；计算器；计算者"
     ],
-    "phonetic": "/kəmˈpjuːtə/",
+    "phonetic": [
+      "美: /kəmˈpjutər/",
+      "英: /kəmˈpjuːtə(r)/"
+    ],
     "lastReviewed": null,
     "love": false,
     "easy": false,
+    "hard": false,
     "cnt": 0,
     "mastery": 0
   }

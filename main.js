@@ -7,11 +7,11 @@ const fs = require('fs/promises')
 const execAsync = promisify(exec)
 const ESPEAK_PATH = path.join(__dirname, 'espeak', 'bin', 'espeak.exe')
 
-wordListPath = '.\\wordlist'
+wordListsFolder = '.\\wordlist'
 
 let currentWordList = 'example'
 
-let words, config
+let words = {}, config
 
 async function init() {
     await readConfig()
@@ -23,31 +23,38 @@ async function readConfig() {
         const data = await fs.readFile("config.json", 'utf-8')
         config = JSON.parse(data)
     } catch (e) {
-        console.log(e);
+        console.error('读取配置文件错误:', e);
         config = {
             "words": {
                 "size": 14,
-                "color": "#000000",
-                "highlightColor": "#2196F3",
                 "definition": "none",
                 "sound": "none"
             },
+            "sound": {
+                "speed": 170
+            },
             "wordLists": {
                 "path": "wordList",
-                "default": "example.json"
+                "default": "example"
             }
         }
         await fs.writeFile("config.json", JSON.stringify(config, null, 2))
     }
     currentWordList = config.wordLists.default
-    wordListPath = config.wordLists.path
+    wordListsFolder = config.wordLists.path
+
+    try {
+        await fs.access(wordListsFolder)
+    } catch {
+        await fs.mkdir(wordListsFolder, { recursive: true })
+    }
 }
 
 async function readWords() {
     try {
-        const filePath = path.join(wordListPath, "words.json")
-        const loveFilePath = path.join(wordListPath, "love.json")
-        const easyFilePath = path.join(wordListPath, "easy.json")
+        const filePath = path.join(wordListsFolder, "words.json")
+        const loveFilePath = path.join(wordListsFolder, "love.json")
+        const easyFilePath = path.join(wordListsFolder, "easy.json")
         const data = await fs.readFile(filePath, 'utf-8')
 
         words = JSON.parse(data)
@@ -59,7 +66,7 @@ async function readWords() {
             loveData = { name: '收藏单词', words: [] }
         }
         if (!easyData || typeof easyData !== 'object') {
-            easyData = { name: '标记为简单单词', words: [] }
+            easyData = { name: '简单单词', words: [] }
         }
 
         const loveSet = new Set(loveData.words)
@@ -84,7 +91,7 @@ async function readWords() {
 
 function createWindow() {
     const win = new BrowserWindow({
-        width: 800,
+        width: 1000,
         height: 600,
         titleBarStyle: 'hidden',
         ...(process.platform !== 'darwin' ? { titleBarOverlay: true } : {}),
@@ -97,29 +104,35 @@ function createWindow() {
 }
 
 ipcMain.handle('getWordLists', async () => {
-    const files = await fs.readdir(wordListPath)
-    const wordLists = []
-    for (let i = 0; i < files.length; i++) {
-        const file = files[i]
-        if (file.endsWith('.json') && file !== 'words.json') {
-            const data = await fs.readFile(path.join(wordListPath, file), 'utf-8')
-            const name = JSON.parse(data).name
-            const value = file.replace('.json', '')
-            wordLists.push({ "value": value, "name": name })
+    let result = []
+    for (const filename of config.wordLists.lists) {
+        const wordListPath = path.join(wordListsFolder, filename + '.json')
+        // 判断文件存在
+        try {
+            await fs.access(wordListPath)
+        } catch {
+            continue
+        }
+        try {
+            const data = await fs.readFile(wordListPath, 'utf-8')
+            const wordList = JSON.parse(data)
+            result.push({
+                name: wordList.name,
+                value: filename
+            })
+        } catch (e) {
+            coneole.log(e)
+            continue
         }
     }
-    return wordLists
+    return result
 })
 
 ipcMain.handle('getWordCurrentList', () => {
     return currentWordList
 })
 
-ipcMain.on('setWordList', (event, wordList) => {
-    currentWordList = wordList
-})
-
-ipcMain.handle('updateWordList', async (event, wordList) => {
+ipcMain.handle('setCurrentWordList', async (event, wordList) => {
     currentWordList = wordList
     config.wordLists.default = wordList
     await fs.writeFile("config.json", JSON.stringify(config, null, 2))
@@ -127,20 +140,33 @@ ipcMain.handle('updateWordList', async (event, wordList) => {
 })
 
 ipcMain.handle('getWords', async (event, page = 0, pageSize = 20) => {
-    const filePath = path.join(wordListPath, currentWordList + '.json')
-    const data = await fs.readFile(filePath, 'utf-8')
-    const wordList = JSON.parse(data).words
-    let result = []
-    const start = page * pageSize
-    const end = Math.min(start + pageSize, wordList.length)
-    for (let i = start; i < end; i++) {
-        result.push(words[wordList[i]])
-    }
-    return {
-        words: result,
-        total: wordList.length,
-        page,
-        pageSize
+    try {
+        const filePath = path.join(wordListsFolder, currentWordList + '.json')
+        const data = await fs.readFile(filePath, 'utf-8')
+        const wordList = JSON.parse(data).words || []
+        let result = []
+        const start = page * pageSize
+        const end = Math.min(start + pageSize, wordList.length)
+        for (let i = start; i < end; i++) {
+            const word = wordList[i]
+            if (word && words[word]) {
+                result.push(words[word])
+            }
+        }
+        return {
+            words: result,
+            total: wordList.length,
+            page,
+            pageSize
+        }
+    } catch (error) {
+        console.error('获取单词列表错误:', error)
+        return {
+            words: [],
+            total: 0,
+            page,
+            pageSize
+        }
     }
 })
 
@@ -148,13 +174,15 @@ ipcMain.handle('getConfig', () => {
     return config
 })
 
-ipcMain.handle('speak', async (event, text) => {
+ipcMain.handle('speak', async (event, params) => {
     try {
-        await execAsync(`${ESPEAK_PATH} -s ${config.sound.speed} "${text}"`)
+        const text = typeof params === 'string' ? params : params.text
+        const voiceType = typeof params === 'string' ? 'en' : (params.voiceType || 'en')
+        await execAsync(`${ESPEAK_PATH} -v ${voiceType} -s ${config.sound.speed} "${text}"`)
         return { success: true }
     } catch (error) {
         console.error('语音合成错误:', error)
-        return { 
+        return {
             success: false,
             error: error.message
         }
@@ -162,8 +190,8 @@ ipcMain.handle('speak', async (event, text) => {
 })
 
 ipcMain.handle('changeLove', async (event, word) => {
-    const loveFilePath = path.join(wordListPath, 'love.json')
-    const wordsFilePath = path.join(wordListPath, 'words.json')
+    const loveFilePath = path.join(wordListsFolder, 'love.json')
+    const wordsFilePath = path.join(wordListsFolder, 'words.json')
 
     try {
         const data = JSON.parse(await fs.readFile(wordsFilePath, 'utf-8'))
@@ -200,8 +228,8 @@ ipcMain.handle('changeLove', async (event, word) => {
 
 
 ipcMain.handle('changeEasy', async (event, word) => {
-    const easyFilePath = path.join(wordListPath, 'easy.json')
-    const wordsFilePath = path.join(wordListPath, 'words.json')
+    const easyFilePath = path.join(wordListsFolder, 'easy.json')
+    const wordsFilePath = path.join(wordListsFolder, 'words.json')
 
     try {
         const data = JSON.parse(await fs.readFile(wordsFilePath, 'utf-8'))
@@ -209,7 +237,7 @@ ipcMain.handle('changeEasy', async (event, word) => {
         const easyRaw = await fs.readFile(easyFilePath, 'utf-8')
         let easyData = JSON.parse(easyRaw)
         if (!easyData || typeof easyData !== 'object') {
-            easyData = { name: '标记为简单单词', words: [] }
+            easyData = { name: '简单单词', words: [] }
         }
 
         const easySet = new Set(easyData.words)
@@ -235,6 +263,40 @@ ipcMain.handle('changeEasy', async (event, word) => {
     }
 })
 
+ipcMain.handle('changeHard', async (event, word) => {
+    const wordsFilePath = path.join(wordListsFolder, 'words.json')
+    const hardFilePath = path.join(wordListsFolder, 'hard.json')
+    try {
+        const data = JSON.parse(await fs.readFile(wordsFilePath, 'utf-8'))
+
+        const hardRaw = await fs.readFile(hardFilePath, 'utf-8')
+        let hardData = JSON.parse(hardRaw)
+        if (!hardData || typeof hardData !== 'object') {
+            hardData = { name: '困难单词', words: [] }
+        }
+
+        const hardSet = new Set(hardData.words)
+        const isHard = !!data[word].hard
+        if (isHard) {
+            hardSet.delete(word)
+            data[word].hard = false
+            words[word].hard = false
+        } else {
+            hardSet.add(word)
+            data[word].hard = true
+            words[word].hard = true
+        }
+        hardData.words = Array.from(hardSet)
+
+        await fs.writeFile(hardFilePath, JSON.stringify(hardData, null, 2))
+        await fs.writeFile(wordsFilePath, JSON.stringify(data, null, 2))
+
+        return true
+    } catch (error) {
+        console.error('Error in changeHard:', error)
+        throw error
+    }
+})
 
 
 app.whenReady().then(async () => {
