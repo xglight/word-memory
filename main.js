@@ -1,5 +1,4 @@
-const { ipcMain } = require('electron')
-const { app, BrowserWindow } = require('electron/main')
+const { app, BrowserWindow, ipcMain, nativeTheme } = require('electron/main')
 const { exec } = require('child_process')
 const { promisify } = require('util')
 const path = require('node:path')
@@ -26,66 +25,86 @@ async function readConfig() {
         console.error('读取配置文件错误:', e);
         config = {
             "words": {
-                "size": 14,
-                "definition": "none",
-                "sound": "none"
+                "size": 14
             },
             "sound": {
-                "speed": 170
+                "speed": 175,
+                "type": "en"
             },
             "wordLists": {
                 "path": "wordList",
                 "default": "example"
+            },
+            "theme": {
+                "mode": "system"
             }
         }
         await fs.writeFile("config.json", JSON.stringify(config, null, 2))
     }
+
     currentWordList = config.wordLists.default
     wordListsFolder = config.wordLists.path
+
+    if (config.theme.mode !== 'light' && config.theme.mode !== 'dark' && config.theme.mode !== 'system')
+        config.theme.mode = 'system'
+    else nativeTheme.themeSource = config.theme.mode
+
+    if (config.sound.speed < 50 || config.sound.speed > 300)
+        config.sound.speed = 175
+
+    if (config.sound.type !== 'en' && config.sound.type !== 'zh' && config.sound.type !== 'en-us')
+        config.sound.type = 'en'
 
     try {
         await fs.access(wordListsFolder)
     } catch {
         await fs.mkdir(wordListsFolder, { recursive: true })
     }
+
+    await fs.writeFile("config.json", JSON.stringify(config, null, 2))
 }
 
 async function readWords() {
+    const filePath = path.join(wordListsFolder, "words.json")
+    const loveFilePath = path.join(wordListsFolder, "love.json")
+    const easyFilePath = path.join(wordListsFolder, "easy.json")
+
     try {
-        const filePath = path.join(wordListsFolder, "words.json")
-        const loveFilePath = path.join(wordListsFolder, "love.json")
-        const easyFilePath = path.join(wordListsFolder, "easy.json")
-        const data = await fs.readFile(filePath, 'utf-8')
+        // 并行读取所有文件
+        const [wordsData, loveData, easyData] = await Promise.all([
+            fs.readFile(filePath, 'utf-8').catch(() => '{}'),
+            fs.readFile(loveFilePath, 'utf-8').catch(() => '{"name":"收藏单词","words":[]}'),
+            fs.readFile(easyFilePath, 'utf-8').catch(() => '{"name":"简单单词","words":[]}')
+        ])
 
-        words = JSON.parse(data)
+        // 解析JSON数据
+        words = JSON.parse(wordsData)
+        const love = typeof JSON.parse(loveData) === 'object' ? JSON.parse(loveData) : { name: '收藏单词', words: [] }
+        const easy = typeof JSON.parse(easyData) === 'object' ? JSON.parse(easyData) : { name: '简单单词', words: [] }
 
-        let loveData = JSON.parse(await fs.readFile(loveFilePath, 'utf-8'))
-        let easyData = JSON.parse(await fs.readFile(easyFilePath, 'utf-8'))
+        // 处理单词状态
+        const loveSet = new Set(love.words)
+        const easySet = new Set(easy.words)
 
-        if (!loveData || typeof loveData !== 'object') {
-            loveData = { name: '收藏单词', words: [] }
-        }
-        if (!easyData || typeof easyData !== 'object') {
-            easyData = { name: '简单单词', words: [] }
-        }
-
-        const loveSet = new Set(loveData.words)
-        const easySet = new Set(easyData.words)
-
-        for (const [word, info] of Object.entries(words)) {
+        Object.entries(words).forEach(([word, info]) => {
             if (info.love) loveSet.add(word)
             else loveSet.delete(word)
             if (info.easy) easySet.add(word)
             else easySet.delete(word)
-        }
+        })
 
-        loveData.words = Array.from(loveSet)
-        easyData.words = Array.from(easySet)
+        // 准备写入数据
+        const newLoveData = { ...love, words: Array.from(loveSet) }
+        const newEasyData = { ...easy, words: Array.from(easySet) }
 
-        await fs.writeFile(loveFilePath, JSON.stringify(loveData, null, 2))
-        await fs.writeFile(easyFilePath, JSON.stringify(easyData, null, 2))
+        // 并行写入文件
+        await Promise.all([
+            fs.writeFile(loveFilePath, JSON.stringify(newLoveData, null, 2)),
+            fs.writeFile(easyFilePath, JSON.stringify(newEasyData, null, 2))
+        ])
     } catch (e) {
-        console.log(e);
+        console.error('读取单词数据失败:', e)
+        throw e // 抛出错误让调用者处理
     }
 }
 
@@ -93,7 +112,7 @@ function createWindow() {
     const win = new BrowserWindow({
         width: 1000,
         height: 600,
-        titleBarStyle: 'hidden',
+        frame: false,
         ...(process.platform !== 'darwin' ? { titleBarOverlay: true } : {}),
         webPreferences: {
             preload: path.join(__dirname, 'preload.js')
@@ -102,6 +121,42 @@ function createWindow() {
 
     win.loadFile('index.html')
 }
+
+ipcMain.handle('window:minimize', () => {
+    BrowserWindow.getFocusedWindow()?.minimize()
+})
+ipcMain.handle('window:maximize', () => {
+    const win = BrowserWindow.getFocusedWindow()
+    win?.isMaximized() ? win.unmaximize() : win.maximize()
+})
+ipcMain.handle('window:close', () => {
+    BrowserWindow.getFocusedWindow()?.close()
+})
+
+ipcMain.handle('dark-mode:toggle', async () => {
+    if (nativeTheme.shouldUseDarkColors) {
+        nativeTheme.themeSource = 'light'
+    } else {
+        nativeTheme.themeSource = 'dark'
+    }
+    return nativeTheme.shouldUseDarkColors
+})
+
+ipcMain.handle('dark-mode:system', async () => {
+    nativeTheme.themeSource = 'system'
+})
+
+ipcMain.handle('dark-mode:light', () => {
+    nativeTheme.themeSource = 'light'
+})
+
+ipcMain.handle('dark-mode:dark', () => {
+    nativeTheme.themeSource = 'dark'
+})
+
+ipcMain.handle('dark-mode:getMode', () => {
+    return nativeTheme.shouldUseDarkColors
+})
 
 ipcMain.handle('getWordLists', async () => {
     let result = []
@@ -177,7 +232,7 @@ ipcMain.handle('getConfig', () => {
 ipcMain.handle('speak', async (event, params) => {
     try {
         const text = typeof params === 'string' ? params : params.text
-        const voiceType = typeof params === 'string' ? 'en' : (params.voiceType || 'en')
+        const voiceType = typeof params === 'string' ? 'en' : (params.voiceType || config.sound.type)
         await execAsync(`${ESPEAK_PATH} -v ${voiceType} -s ${config.sound.speed} "${text}"`)
         return { success: true }
     } catch (error) {
@@ -311,7 +366,5 @@ app.whenReady().then(async () => {
 
 
 app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        app.quit()
-    }
+    app.quit()
 })

@@ -1,6 +1,22 @@
 const { contextBridge, ipcRenderer } = require('electron')
 
 contextBridge.exposeInMainWorld('wordMemoryAPI', {
+  // 最小化窗口
+  minimize: async () => ipcRenderer.invoke('window:minimize'),
+  // 最大化窗口
+  maximize: async () => ipcRenderer.invoke('window:maximize'),
+  // 关闭窗口
+  close: async () => ipcRenderer.invoke('window:close'),
+  // 切换主题
+  toggle: async () => ipcRenderer.invoke('dark-mode:toggle'),
+  // 切换系统主题
+  system: async () => ipcRenderer.invoke('dark-mode:system'),
+  // 切换到亮色
+  light: async () => ipcRenderer.invoke('dark-mode:light'),
+  // 切换到暗色
+  dark: async () => ipcRenderer.invoke('dark-mode:dark'),
+  // 获取当前主题
+  getMode: async () => ipcRenderer.invoke('dark-mode:getMode'),
   // 获取全部单词表
   getWordLists: async () => ipcRenderer.invoke('getWordLists'),
   // 获取当前单词表
@@ -19,15 +35,4 @@ contextBridge.exposeInMainWorld('wordMemoryAPI', {
   changeEasy: async (word) => ipcRenderer.invoke('changeEasy', word),
   // 标记为困难
   changeHard: async (word) => ipcRenderer.invoke('changeHard', word),
-})
-
-window.addEventListener('DOMContentLoaded', () => {
-  const replaceText = (selector, text) => {
-    const element = document.getElementById(selector)
-    if (element) element.innerText = text
-  }
-
-  for (const type of ['chrome', 'node', 'electron']) {
-    replaceText(`${type}-version`, process.versions[type])
-  }
 })

@@ -5,7 +5,8 @@
     "sound": "none"
   },
   "sound": {
-    "speed": 175
+    "speed": 175,
+    "type": "en"
   },
   "wordLists": {
     "path": "wordlist",
@@ -16,5 +17,8 @@
       "easy",
       "hard"
     ]
+  },
+  "theme": {
+    "mode": "system"
   }
 }

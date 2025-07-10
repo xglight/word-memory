@@ -1,5 +1,8 @@
 document.addEventListener('DOMContentLoaded', async () => {
     // 获取DOM元素
+    const minimizeBtn = document.getElementById('minimize-btn')
+    const maximizeBtn = document.getElementById('maximize-btn')
+    const closeBtn = document.getElementById('close-btn')
     const wordCard = document.getElementById('word-card')
     const wordElement = document.getElementById('word')
     const definitionElement = document.getElementById('definition')
@@ -14,25 +17,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     const easyBtn = document.getElementById('easy-btn')
     const hardBtn = document.getElementById('hard-btn')
     const speakBtn = document.getElementById('speak-btn')
+    const voiceTypeSelect = document.getElementById('voice-type')
+    const lightBtn = document.getElementById('light-mode-btn')
+    const darkBtn = document.getElementById('dark-mode-btn')
 
     // 加载单词列表
     let words = []
     let config
     let currentIndex = 0
+    let currentPage = 0
+    const pageSize = 20
+    let totalWords = 0
+    let currentMode
 
     async function init() {
         await loadConfig()
         await loadWordLists()
         await loadWordList()
+        await loadViceTypes()
+        await loadCurrentMode()
     }
 
     async function loadConfig() {
         config = await window.wordMemoryAPI.getConfig()
     }
 
-    let currentPage = 0
-    const pageSize = 20
-    let totalWords = 0
 
     async function loadWords() {
         try {
@@ -154,6 +163,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    async function loadCurrentMode() {
+        currentMode = await window.wordMemoryAPI.getMode() ? 'dark' : 'light'
+        console.log('Current mode:', currentMode)
+        if (currentMode === 'light') {
+            lightBtn.classList.add('active')
+            darkBtn.classList.remove('active')
+        }
+        else if (currentMode === 'dark') {
+            darkBtn.classList.add('active')
+            lightBtn.classList.remove('active')
+        }
+    }
+
     function updateWordListHighlight() {
         const items = document.querySelectorAll('#word-list li')
         items.forEach((item, index) => {
@@ -161,8 +183,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         })
     }
 
-    // 初始加载
-    await init()
+    async function loadViceTypes() {
+        console.log(config.sound.type)
+        voiceTypeSelect.value = config.sound.type
+    }
 
     // 处理节切换
     document.getElementById('page-selector').addEventListener('change', async (e) => {
@@ -247,6 +271,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    minimizeBtn.addEventListener('click', async () => {
+        await window.wordMemoryAPI.minimize()
+    })
+
+    maximizeBtn.addEventListener('click', async () => {
+        await window.wordMemoryAPI.maximize()
+    })
+
+    closeBtn.addEventListener('click', async () => {
+        await window.wordMemoryAPI.close()
+    })
+
     // 单词卡片翻转（显示/隐藏释义）
     flipBtn.addEventListener('click', () => {
         const show = definitionElement.style.display === 'none'
@@ -273,32 +309,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     })
 
     // 朗读单词
-    const voiceTypeSelect = document.getElementById('voice-type')
-
     speakBtn.addEventListener('click', async () => {
+        // 立即触发动画反馈
+        speakBtn.style.transform = 'scale(1.1)'
+
         try {
             const word = words[currentIndex].word
             const voiceType = voiceTypeSelect.value
-            await window.wordMemoryAPI.speak(word, voiceType)
 
             // 显示反馈
             const originalTitle = speakBtn.getAttribute('title')
             speakBtn.setAttribute('title', '朗读中...')
-            setTimeout(() => {
-                speakBtn.setAttribute('title', originalTitle)
-            }, 2000)
 
-            // 动画反馈
-            speakBtn.style.transform = 'scale(1.2)'
-            setTimeout(() => {
-                speakBtn.style.transform = 'scale(1)'
-            }, 300)
+            // 异步播放语音
+            window.wordMemoryAPI.speak(word, voiceType)
+                .catch(err => {
+                    console.error('朗读失败:', err)
+                    speakBtn.setAttribute('title', '朗读失败')
+                })
+                .finally(() => {
+                    setTimeout(() => {
+                        speakBtn.setAttribute('title', originalTitle)
+                        speakBtn.style.transform = 'scale(1)'
+                    }, 150)
+                })
         } catch (err) {
-            console.error('朗读失败:', err)
-            speakBtn.setAttribute('title', '朗读失败')
+            console.error('朗读错误:', err)
+            speakBtn.setAttribute('title', '朗读错误')
             setTimeout(() => {
                 speakBtn.setAttribute('title', '朗读单词')
-            }, 2000)
+                speakBtn.style.transform = 'scale(1)'
+            }, 150)
         }
     })
 
@@ -387,6 +428,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     })
 
+    lightBtn.addEventListener('click', async () => {
+        if (currentMode === 'light') return
+        await window.wordMemoryAPI.light()
+        document.documentElement.classList.remove('dark')
+        document.documentElement.classList.add('light')
+        lightBtn.classList.toggle('active')
+        darkBtn.classList.toggle('active')
+        currentMode = 'light'
+    })
+
+    darkBtn.addEventListener('click', async () => {
+        if (currentMode === 'dark') return
+        await window.wordMemoryAPI.dark()
+        document.documentElement.classList.remove('light')
+        document.documentElement.classList.add('dark')
+        lightBtn.classList.toggle('active')
+        darkBtn.classList.toggle('active')
+        currentMode = 'dark'
+    })
+
     // 添加快捷键支持：左右箭头导航
     document.addEventListener('keydown', (event) => {
         if (event.key === 'ArrowLeft') {
@@ -395,4 +456,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             nextBtn.click()
         }
     })
+
+    await init()
 })
