@@ -27,6 +27,12 @@ contextBridge.exposeInMainWorld('wordMemoryAPI', {
   getWords: async (page = 0, pageSize = 20) => ipcRenderer.invoke('getWords', page, pageSize),
   // 获取 config
   getConfig: async () => ipcRenderer.invoke('getConfig'),
+  // 修改 definition
+  setDefinition: async (definition) => ipcRenderer.invoke('setDefinition', { definition }),
+  // 修改 sound-type
+  setSoundType: async (type) => ipcRenderer.invoke('setSoundType', { type }),
+  // 修改默认主题
+  setDefaultTheme: async (theme) => ipcRenderer.invoke('setDefaultTheme', { theme }),
   // 朗读单词
   speak: async (text, voiceType = 'en') => ipcRenderer.invoke('speak', { text, voiceType }),
   // 标记为收藏

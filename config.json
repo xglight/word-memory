@@ -1,8 +1,7 @@
 {
   "words": {
     "size": 14,
-    "definition": "none",
-    "sound": "none"
+    "definition": "none"
   },
   "sound": {
     "speed": 175,
@@ -10,12 +9,12 @@
   },
   "wordLists": {
     "path": "wordlist",
-    "default": "example",
+    "default": "college_entrance_examination",
     "lists": [
-      "example",
       "love",
       "easy",
-      "hard"
+      "hard",
+      "college_entrance_examination"
     ]
   },
   "theme": {

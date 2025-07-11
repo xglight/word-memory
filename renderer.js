@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         await loadWordList()
         await loadViceTypes()
         await loadCurrentMode()
+        await settingInit()
     }
 
     async function loadConfig() {
@@ -95,6 +96,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         wordListSelect.value = currentList
         await loadWords()
         await renderWordList()
+        updateWordListHighlight()
     }
 
     async function renderWordList() {
@@ -108,17 +110,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log('Fetching all words...')
             // 使用分页方式获取所有单词
             let allWords = []
-            let page = 0
-            let hasMore = true
 
-            while (hasMore) {
-                const response = await window.wordMemoryAPI.getWords(page, pageSize)
-                console.log(`Loaded page ${page} with ${response.words.length} words`)
+            const response = await window.wordMemoryAPI.getWords(currentPage, pageSize)
+            console.log(`Loaded page ${currentPage} with ${response.words.length} words`)
 
-                allWords = allWords.concat(response.words)
-                hasMore = (page + 1) * pageSize < response.total
-                page++
-            }
+            allWords = allWords.concat(response.words)
 
             console.log(`Total words loaded: ${allWords.length}`)
 
@@ -156,6 +152,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             })
 
             wordListElement.appendChild(fragment)
+
+            showCurrentWord()
             console.log('Word list rendered successfully')
         } catch (err) {
             console.error('Failed to render word list:', err)
@@ -180,6 +178,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         const items = document.querySelectorAll('#word-list li')
         items.forEach((item, index) => {
             item.classList.toggle('highlight', index === currentIndex)
+            if (index === currentIndex) {
+                item.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                })
+            }
         })
     }
 
@@ -192,7 +196,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('page-selector').addEventListener('change', async (e) => {
         currentPage = parseInt(e.target.value)
         currentIndex = 0
-        await loadWords()
+        await loadWordList()
     })
 
     // 处理单词列表切换
@@ -236,12 +240,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         wordElement.textContent = word.word
         // 拼接 definition
-        let definition = ''
-        for (let i = 0; i < word.definition.length; i++)
-            definition += word.definition[i]
-
+        let definition = word.definition.join('<br>')
         definitionElement.style.display = 'block'
-        definitionElement.textContent = definition
+        definitionElement.innerHTML = definition
 
         // 拼接 phonetic
         let phonetic = ''
@@ -252,7 +253,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 更新单词序号显示
         wordIndexElement.textContent = `${currentIndex + 1}/${words.length}`
 
-        // 默认隐藏释义
+        // 默认释义
         definitionElement.style.display = config.words.definition
 
         flipBtn.textContent = definitionElement.style.display === 'none' ? '显示释义' : '隐藏释义'
@@ -291,20 +292,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     })
 
     // 上一个单词
-    prevBtn.addEventListener('click', () => {
+    prevBtn.addEventListener('click', async () => {
         if (currentIndex > 0) {
             currentIndex--
             showCurrentWord()
             updateWordListHighlight()
+        } else if (currentPage > 0) {
+            currentPage--
+            currentIndex = pageSize - 1
+            await loadWordList()
         }
     })
 
     // 下一个单词
-    nextBtn.addEventListener('click', () => {
+    nextBtn.addEventListener('click', async () => {
         if (currentIndex < words.length - 1) {
             currentIndex++
             showCurrentWord()
             updateWordListHighlight()
+        } else if (currentPage < Math.ceil(totalWords / pageSize) - 1) {
+            currentPage++
+            currentIndex = 0
+            await loadWordList()
         }
     })
 
@@ -448,13 +457,115 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentMode = 'dark'
     })
 
-    // 添加快捷键支持：左右箭头导航
+    // 添加快捷键支持：左右箭头导航和功能按钮快捷键
     document.addEventListener('keydown', (event) => {
         if (event.key === 'ArrowLeft') {
             prevBtn.click()
         } else if (event.key === 'ArrowRight') {
             nextBtn.click()
+        } else if (event.key === ' ') {
+            flipBtn.click()
+        } else if (event.ctrlKey) {
+            // Ctrl组合键处理
+            switch (event.key.toLowerCase()) {
+                case 'f':
+                    lovebtn.click()
+                    break
+                case 'e':
+                    easyBtn.click()
+                    break
+                case 's':
+                    speakBtn.click()
+                    break
+                case 'h':
+                    hardBtn.click()
+                    break
+                case 'c':
+                    copyBtn.click()
+                    break
+                case 'i':
+                    if (settingsOverlay.classList.contains('active'))
+                        closeSettingsBtn.click()
+                    else settingsBtn.click()
+                    break
+            }
         }
+    })
+
+    // 设置按钮点击事件
+    const settingsBtn = document.getElementById('settings-btn')
+    const settingsOverlay = document.getElementById('settings-overlay')
+    const closeSettingsBtn = document.getElementById('close-settings-btn')
+    const voiceTypeSetting = document.getElementById('voice-type-setting')
+    const showDefinitionSetting = document.getElementById('show-definition')
+    const lightModeSetting = document.getElementById('light-mode-setting')
+    const darkModeSetting = document.getElementById('dark-mode-setting')
+    const systemModeSetting = document.getElementById('system-theme-setting')
+    const definationBox = document.getElementById('show-definition')
+
+    async function settingInit() {
+        try {
+            // 确保config已加载
+            if (!config) {
+                config = await window.wordMemoryAPI.getConfig()
+            }
+
+            // 初始化语音设置
+            voiceTypeSetting.value = config.sound.type
+
+            // 初始化定义显示设置
+            showDefinitionSetting.checked = config.words.definition === 'block'
+
+            // 初始化主题模式设置
+            const currentMode = await window.wordMemoryAPI.getMode()
+            if (currentMode) {
+                darkModeSetting.classList.add('active')
+                lightModeSetting.classList.remove('active')
+            } else {
+                lightModeSetting.classList.add('active')
+                darkModeSetting.classList.remove('active')
+            }
+
+            console.log('设置界面初始化完成')
+        } catch (err) {
+            console.error('设置界面初始化失败:', err)
+        }
+    }
+
+    settingsBtn.addEventListener('click', () => {
+        settingsOverlay.classList.add('active')
+    })
+
+    closeSettingsBtn.addEventListener('click', () => {
+        settingsOverlay.classList.remove('active')
+    })
+
+    lightModeSetting.addEventListener('click', async () => {
+        await window.wordMemoryAPI.setDefaultTheme('light')
+        await loadCurrentMode()
+    })
+
+    darkModeSetting.addEventListener('click', async () => {
+        await window.wordMemoryAPI.setDefaultTheme('dark')
+        await loadCurrentMode()
+    })
+
+    systemModeSetting.addEventListener('click', async () => {
+        await window.wordMemoryAPI.setDefaultTheme('system')
+        await loadCurrentMode()
+    })
+
+    definationBox.addEventListener('change', async () => {
+        config.words.definition = definationBox.checked ? 'block' : 'none'
+        await window.wordMemoryAPI.setDefinition(config.words.definition)
+        showCurrentWord()
+    })
+
+    voiceTypeSetting.addEventListener('change', async () => {
+        config.sound.type = voiceTypeSetting.value
+        voiceTypeSelect.value = voiceTypeSetting.value
+        await window.wordMemoryAPI.setSoundType(config.sound.type)
+        showCurrentWord()
     })
 
     await init()

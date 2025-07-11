@@ -25,15 +25,22 @@ async function readConfig() {
         console.error('读取配置文件错误:', e);
         config = {
             "words": {
-                "size": 14
+                "size": 14,
+                "definition": "none"
             },
             "sound": {
                 "speed": 175,
                 "type": "en"
             },
             "wordLists": {
-                "path": "wordList",
-                "default": "example"
+                "path": "wordlist",
+                "default": "college_entrance_examination",
+                "lists": [
+                    "love",
+                    "easy",
+                    "hard",
+                    "college_entrance_examination"
+                ]
             },
             "theme": {
                 "mode": "system"
@@ -116,7 +123,8 @@ function createWindow() {
         ...(process.platform !== 'darwin' ? { titleBarOverlay: true } : {}),
         webPreferences: {
             preload: path.join(__dirname, 'preload.js')
-        }
+        },
+        icon: path.join(__dirname, 'src', 'word_memory.ico')
     })
 
     win.loadFile('index.html')
@@ -227,6 +235,22 @@ ipcMain.handle('getWords', async (event, page = 0, pageSize = 20) => {
 
 ipcMain.handle('getConfig', () => {
     return config
+})
+
+ipcMain.handle('setDefinition', async (event, definition) => {
+    config.words.definition = definition.definition
+    await fs.writeFile("config.json", JSON.stringify(config, null, 2))
+})
+
+ipcMain.handle('setSoundType', async (event, type) => {
+    config.sound.type = type.type
+    await fs.writeFile("config.json", JSON.stringify(config, null, 2))
+})
+
+ipcMain.handle('setDefaultTheme', async (event, mode) => {
+    config.theme.mode = mode.theme
+    nativeTheme.themeSource = mode.theme
+    await fs.writeFile("config.json", JSON.stringify(config, null, 2))
 })
 
 ipcMain.handle('speak', async (event, params) => {
