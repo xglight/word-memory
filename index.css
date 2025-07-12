@@ -3,6 +3,7 @@
     color-scheme: light dark;
 }
 
+
 @media (prefers-color-scheme: light) {
     button {
         background-color: #f6f6f6;
@@ -54,10 +55,6 @@
         border: none;
         border-radius: 4px;
         cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .window-controls button {
         transition: all 0.2s ease;
     }
 
@@ -174,6 +171,10 @@
     #settings-btn:active {
         transform: translateY(0);
         box-shadow: 0 2px 6px rgba(0, 123, 255, 0.2);
+        -webkit-transform: translateY(0);
+        -moz-transform: translateY(0);
+        -ms-transform: translateY(0);
+        -o-transform: translateY(0);
     }
 
     .selector-container select {
@@ -198,7 +199,36 @@
     .selector-container select:focus {
         outline: none;
         border-color: #007BFF;
-        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+    }
+
+    #word-search {
+        width: 220px;
+        padding: 8px 16px;
+        border: 1px solid #a2c3ff;
+        border-radius: 8px;
+        background-color: #ffffff;
+        color: #1a1a1a;
+        font-size: 0.95em;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    }
+
+    #word-search:hover {
+        border-color: #007BFF;
+        box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
+        transform: translateY(-1px);
+    }
+
+    #word-search:focus {
+        outline: none;
+        border-color: #007BFF;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+        background-color: rgba(255, 255, 255, 0.95);
+    }
+
+    #word-search::placeholder {
+        color: #9ca3af;
+        opacity: 0.8;
     }
 
     .main-content {
@@ -270,15 +300,6 @@
 
     .word-card-buttons {
         position: absolute;
-        bottom: 10px;
-        right: 10px;
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    .word-card-buttons {
-        position: absolute;
         bottom: 20px;
         right: 20px;
         display: flex;
@@ -305,6 +326,10 @@
         -webkit-user-select: text;
         backdrop-filter: blur(5px);
         border: 1px solid #007BFF !important;
+        -webkit-transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        -moz-transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        -ms-transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        -o-transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
 
     .word-card-buttons button:hover {
@@ -535,18 +560,28 @@
         color: white;
     }
 
-    .settings-header h2 {
-        color: white;
-        font-weight: 600;
+    .settings-container::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
     }
 
-    .settings-section h3 {
-        color: white;
-        font-weight: 500;
+    .settings-container::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 5px;
+        margin: 4px 0;
     }
 
-    .settings-content {
-        color: white;
+    .settings-container::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 5px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: inset 0 0 3px rgba(255, 255, 255, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    .settings-container::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.5);
+        box-shadow: inset 0 0 6px rgba(255, 255, 255, 0.3);
     }
 
     .settings-header {
@@ -555,6 +590,10 @@
         align-items: center;
         padding: 16px 20px;
         border-bottom: 1px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        background: inherit;
+        z-index: 1000;
     }
 
     .settings-header h2 {
@@ -580,6 +619,7 @@
     }
 
     .settings-content {
+        color: white;
         padding: 20px;
     }
 
@@ -591,22 +631,13 @@
         margin-top: 0;
         margin-bottom: 12px;
         font-size: 1rem;
+        color: white;
+        font-weight: 500;
     }
 
     .settings-option {
-        display: flex;
-        align-items: center;
-        margin-bottom: 12px;
-    }
-
-    .settings-option label {
-        margin-right: 10px;
-        min-width: 100px;
-    }
-
-    .settings-option {
-        display: flex;
-        align-items: center;
+        display: block;
+        align-items: column;
         margin-bottom: 15px;
         padding: 8px 12px;
         border-radius: 6px;
@@ -619,6 +650,7 @@
 
     .settings-option label {
         margin-right: 12px;
+        min-width: 100px;
         cursor: pointer;
         font-size: 0.95em;
         flex: 1;
@@ -692,11 +724,152 @@
         background-color: rgba(35, 39, 46);
     }
 
+    .settings-tabs {
+        display: flex;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        position: sticky;
+        top: 60px;
+        background: inherit;
+        z-index: 10;
+    }
+
+    .settings-tab {
+        padding: 10px 20px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        color: #f4f4f4;
+        position: relative;
+        margin-right: 5px;
+        transition: color 0.2s ease;
+    }
+
+    .settings-tab:hover {
+        color: #007BFF;
+    }
+
+    .settings-tab.active {
+        color: #007BFF;
+        font-weight: bold;
+    }
+
+    .settings-tab.active::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background-color: #007BFF;
+    }
+
+    .settings-tab-content {
+        display: none;
+    }
+
+    .settings-tab-content.active {
+        display: block;
+    }
+
+    #about-tab .settings-option p {
+        display: block !important;
+        margin-bottom: 10px !important;
+        width: 100% !important;
+        clear: both !important;
+    }
+
 }
 
+
+
+
 @media (prefers-color-scheme: dark) {
-    button {
+    #word-search {
+        width: 220px;
+        padding: 8px 16px;
+        border: 1px solid #a2c3ff;
+        border-radius: 8px;
         background-color: rgb(35, 39, 46);
+        color: #ffffff;
+        font-size: 0.95em;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    }
+
+    #word-search:hover {
+        border-color: #007BFF;
+        box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
+        transform: translateY(-1px);
+    }
+
+    #word-search:focus {
+        outline: none;
+        border-color: #007BFF;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+        background-color: rgb(35, 39, 46, 0.9);
+    }
+
+    #word-search::placeholder {
+        color: #ffffff;
+        opacity: 0.8;
+    }
+
+    .settings-tabs {
+        display: flex;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        margin-bottom: 20px;
+        position: sticky;
+        top: 60px;
+        background: inherit;
+        z-index: 10;
+    }
+
+    .settings-tab {
+        padding: 10px 20px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        color: rgba(35, 39, 46);
+        position: relative;
+        margin-right: 5px;
+        transition: color 0.2s ease;
+    }
+
+    .settings-tab:hover {
+        color: #007BFF;
+    }
+
+    .settings-tab.active {
+        color: #007BFF;
+        font-weight: bold;
+    }
+
+    .settings-tab.active::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background-color: #007BFF;
+    }
+
+    .settings-tab-content {
+        display: none;
+    }
+
+    .settings-tab-content.active {
+        display: block;
+    }
+
+    #about-tab .settings-option p {
+        display: block !important;
+        margin-bottom: 10px !important;
+        width: 100% !important;
+        clear: both !important;
     }
 
     body,
@@ -819,6 +992,7 @@
     }
 
     #settings-btn {
+        background: transparent;
         color: rgb(255, 255, 255, 0.8);
         border: none;
         padding: 8px;
@@ -833,7 +1007,6 @@
         justify-content: center;
         user-select: text;
         -webkit-user-select: text;
-        backdrop-filter: blur(5px);
         border: 1px solid rgba(255, 255, 255, 0.3);
     }
 
@@ -947,15 +1120,6 @@
 
     .word-card-buttons {
         position: absolute;
-        bottom: 10px;
-        right: 10px;
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    .word-card-buttons {
-        position: absolute;
         bottom: 20px;
         right: 20px;
         display: flex;
@@ -965,6 +1129,7 @@
     }
 
     .word-card-buttons button {
+        background: transparent;
         color: rgb(255, 255, 255, 0.8);
         border: none;
         padding: 10px;
@@ -979,7 +1144,6 @@
         justify-content: center;
         user-select: text;
         -webkit-user-select: text;
-        backdrop-filter: blur(5px);
         border: 1px solid #007BFF !important;
     }
 
@@ -1211,14 +1375,28 @@
         color: #000000;
     }
 
-    .settings-header h2 {
-        color: #000000;
-        font-weight: 600;
+    .settings-container::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
     }
 
-    .settings-section h3 {
-        color: #000000;
-        font-weight: 500;
+    .settings-container::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 5px;
+        margin: 4px 0;
+    }
+
+    .settings-container::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 5px;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    .settings-container::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 0, 0, 0.5);
+        box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
     }
 
     .settings-content {
@@ -1231,9 +1409,15 @@
         align-items: center;
         padding: 16px 20px;
         border-bottom: 1px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        background: inherit;
+        z-index: 1000;
     }
 
     .settings-header h2 {
+        color: #000000;
+        font-weight: 600;
         margin: 0;
         font-size: 1.2rem;
     }
@@ -1259,34 +1443,24 @@
         padding: 20px;
     }
 
-    .settings-section {
-        margin-bottom: 20px;
-    }
-
     .settings-section h3 {
         margin-top: 0;
-        margin-bottom: 12px;
+        margin-bottom: 13px;
         font-size: 1rem;
+        color: #000000;
+        font-weight: 500;
     }
 
     .settings-option {
-        display: flex;
-        align-items: center;
-        margin-bottom: 12px;
-    }
-
-    .settings-option label {
-        margin-right: 10px;
-        min-width: 100px;
-    }
-
-    .settings-option {
-        display: flex;
-        align-items: center;
+        display: block;
         margin-bottom: 15px;
         padding: 8px 12px;
         border-radius: 6px;
         transition: all 0.2s ease;
+        -webkit-transition: all 0.2s ease;
+        -moz-transition: all 0.2s ease;
+        -ms-transition: all 0.2s ease;
+        -o-transition: all 0.2s ease;
     }
 
     .settings-option:hover {
@@ -1294,7 +1468,8 @@
     }
 
     .settings-option label {
-        margin-right: 12px;
+        margin-right: 10px;
+        min-width: 100px;
         cursor: pointer;
         font-size: 0.95em;
         flex: 1;

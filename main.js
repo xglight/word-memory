@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, nativeTheme } = require('electron/main')
+const { app, BrowserWindow, ipcMain, nativeTheme, shell } = require('electron/main')
 const { exec } = require('child_process')
 const { promisify } = require('util')
 const path = require('node:path')
@@ -36,10 +36,22 @@ async function readConfig() {
                 "path": "wordlist",
                 "default": "college_entrance_examination",
                 "lists": [
-                    "love",
-                    "easy",
-                    "hard",
-                    "college_entrance_examination"
+                    {
+                        "name": "college_entrance_examination",
+                        "enable": true
+                    },
+                    {
+                        "name": "love",
+                        "enable": true
+                    },
+                    {
+                        "name": "easy",
+                        "enable": true
+                    },
+                    {
+                        "name": "hard",
+                        "enable": true
+                    }
                 ]
             },
             "theme": {
@@ -122,10 +134,24 @@ function createWindow() {
         frame: false,
         ...(process.platform !== 'darwin' ? { titleBarOverlay: true } : {}),
         webPreferences: {
-            preload: path.join(__dirname, 'preload.js')
+            preload: path.join(__dirname, 'preload.js'),
+            nativeWindowOpen: true
         },
         icon: path.join(__dirname, 'src', 'word_memory.ico')
     })
+
+    // 处理链接点击，在默认浏览器中打开
+    win.webContents.setWindowOpenHandler(({ url }) => {
+        shell.openExternal(url)
+        return { action: 'deny' }
+    })
+
+    win.webContents.on('will-navigate', (event, url) => {
+        if (url !== win.webContents.getURL()) {
+            event.preventDefault();
+            shell.openExternal(url);
+        }
+    });
 
     win.loadFile('index.html')
 }
@@ -167,26 +193,16 @@ ipcMain.handle('dark-mode:getMode', () => {
 })
 
 ipcMain.handle('getWordLists', async () => {
-    let result = []
-    for (const filename of config.wordLists.lists) {
-        const wordListPath = path.join(wordListsFolder, filename + '.json')
-        // 判断文件存在
-        try {
-            await fs.access(wordListPath)
-        } catch {
-            continue
-        }
-        try {
-            const data = await fs.readFile(wordListPath, 'utf-8')
-            const wordList = JSON.parse(data)
-            result.push({
-                name: wordList.name,
-                value: filename
-            })
-        } catch (e) {
-            coneole.log(e)
-            continue
-        }
+    result = []
+    for (let wordlist of config.wordLists.lists) {
+        const filePath = path.join(wordListsFolder, wordlist.name + '.json')
+        const data = await fs.readFile(filePath, 'utf-8')
+        const wordList = JSON.parse(data) || []
+        result.push({
+            "name": wordList.name,
+            "value": wordlist.name,
+            "enable": wordlist.enable
+        })
     }
     return result
 })
@@ -202,23 +218,32 @@ ipcMain.handle('setCurrentWordList', async (event, wordList) => {
     return true
 })
 
-ipcMain.handle('getWords', async (event, page = 0, pageSize = 20) => {
+ipcMain.handle('toggleWordListState', async (event, wordList) => {
+    let enable = false
+    config.wordLists.lists.forEach(list => {
+        if (list.name === wordList) {
+            enable = list.enable = !list.enable
+        }
+    })
+    await fs.writeFile("config.json", JSON.stringify(config, null, 2))
+    return enable
+})
+
+ipcMain.handle('getWords', async (event, searchTerm = '', page = 0, pageSize = 20) => {
     try {
         const filePath = path.join(wordListsFolder, currentWordList + '.json')
         const data = await fs.readFile(filePath, 'utf-8')
         const wordList = JSON.parse(data).words || []
+        let enableWords = []
+        for (let word of wordList)
+            if (words[word] && (searchTerm === '' || word.includes(searchTerm))) enableWords.push(word)
         let result = []
         const start = page * pageSize
-        const end = Math.min(start + pageSize, wordList.length)
-        for (let i = start; i < end; i++) {
-            const word = wordList[i]
-            if (word && words[word]) {
-                result.push(words[word])
-            }
-        }
+        const end = Math.min(start + pageSize, enableWords.length)
+        for (let i = start; i < end; i++) result.push(words[enableWords[i]])
         return {
             words: result,
-            total: wordList.length,
+            total: enableWords.length,
             page,
             pageSize
         }
@@ -235,6 +260,11 @@ ipcMain.handle('getWords', async (event, page = 0, pageSize = 20) => {
 
 ipcMain.handle('getConfig', () => {
     return config
+})
+
+ipcMain.handle('setWord', async (event, word) => {
+    config.words.word = word.word
+    await fs.writeFile("config.json", JSON.stringify(config, null, 2))
 })
 
 ipcMain.handle('setDefinition', async (event, definition) => {
@@ -375,6 +405,11 @@ ipcMain.handle('changeHard', async (event, word) => {
         console.error('Error in changeHard:', error)
         throw error
     }
+})
+
+// 处理外部链接打开
+ipcMain.handle('open-external', (event, url) => {
+    shell.openExternal(url)
 })
 
 

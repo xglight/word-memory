@@ -36,6 +36,7 @@
         <div>
             <select id="wordlist-selector"></select>
             <select id="page-selector" style="margin-left: 10px;"></select>
+            <input type="text" id="word-search" placeholder="搜索单词..." style="margin-left: 10px;">
         </div>
         <div class="additional-btn-container">
             <button id="light-mode-btn" class="additional-btn theme-btn active" title="亮色模式">
@@ -58,7 +59,7 @@
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                 </svg>
             </button>
-            <button id="settings-btn" class="additional-btn" title="设置">
+            <button id="settings-btn" class="additional-btn" title="设置 ctrl+i">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="3"></circle>
@@ -79,7 +80,7 @@
                 <div id="phonetic"></div>
                 <div id="definition"></div>
                 <div class="word-card-buttons">
-                    <button id="favorite-btn" class="additional-btn" title="收藏单词">
+                    <button id="favorite-btn" class="additional-btn" title="收藏单词 ctrl+f">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path
@@ -87,14 +88,14 @@
                             </path>
                         </svg>
                     </button>
-                    <button id="easy-btn" class="additional-btn" title="标记为简单词">
+                    <button id="easy-btn" class="additional-btn" title="标记为简单词 ctrl+e">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                             <polyline points="22 4 12 14.01 9 11.01"></polyline>
                         </svg>
                     </button>
-                    <button id="hard-btn" class="additional-btn" title="标记为困难词">
+                    <button id="hard-btn" class="additional-btn" title="标记为困难词 ctrl+h">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
@@ -103,7 +104,7 @@
                             <line x1="15" y1="9" x2="15.01" y2="9"></line>
                         </svg>
                     </button>
-                    <button id="speak-btn" class="speak-btn" title="朗读单词">
+                    <button id="speak-btn" class="speak-btn" title="朗读单词 ctrl+s">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
@@ -119,7 +120,7 @@
                             <option value="zh">中文发音</option>
                         </select>
                     </div>
-                    <button id="copy-btn" class="copy-btn" title="复制单词">
+                    <button id="copy-btn" class="copy-btn" title="复制单词 ctrl+c">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -130,9 +131,10 @@
             </div>
 
             <div class="controls">
-                <button id="prev-btn">上一个</button>
-                <button id="flip-btn">显示释义</button>
-                <button id="next-btn">下一个</button>
+                <button id="prev-btn" title="left arrow">上一个</button>
+                <button id="show-word-btn" title="ctrl+z">显示单词</button>
+                <button id="flip-btn" title="space">显示释义</button>
+                <button id="next-btn" title="right arrow">下一个</button>
             </div>
         </div>
 
@@ -159,30 +161,73 @@
                 </button>
             </div>
             <div class="settings-content">
-                <div class="settings-section">
-                    <h3>发音设置</h3>
-                    <div class="settings-option">
-                        <label for="voice-type-setting">默认发音:</label>
-                        <select id="voice-type-setting" class="settings-select">
-                            <option value="en">英式发音</option>
-                            <option value="en-us">美式发音</option>
-                            <option value="zh">中文发音</option>
-                        </select>
+                <div class="settings-tabs">
+                    <button class="settings-tab active" data-tab="basic">基本设置</button>
+                    <button class="settings-tab" data-tab="wordlist">单词表设置</button>
+                    <button class="settings-tab" data-tab="about">关于</button>
+                </div>
+
+                <div id="basic-tab" class="settings-tab-content active">
+                    <div class="settings-section">
+                        <h3>发音设置</h3>
+                        <div class="settings-option">
+                            <label for="voice-type-setting">默认发音:</label>
+                            <select id="voice-type-setting" class="settings-select">
+                                <option value="en">英式发音</option>
+                                <option value="en-us">美式发音</option>
+                                <option value="zh">中文发音</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <h3>显示设置</h3>
+                        <div class="settings-option">
+                            <label for="show-word">默认显示单词和音标:</label>
+                            <input type="checkbox" id="show-word" class="settings-checkbox">
+                        </div>
+                        <div class="settings-option">
+                            <label for="show-definition">默认显示释义:</label>
+                            <input type="checkbox" id="show-definition" class="settings-checkbox">
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <h3>主题设置</h3>
+                        <div class="settings-option">
+                            <button id="light-mode-setting" class="settings-theme-btn">亮色主题</button>
+                            <button id="dark-mode-setting" class="settings-theme-btn">暗色主题</button>
+                            <button id="system-theme-setting" class="settings-theme-btn">跟随系统</button>
+                        </div>
                     </div>
                 </div>
-                <div class="settings-section">
-                    <h3>显示设置</h3>
-                    <div class="settings-option">
-                        <label for="show-definition">默认显示释义:</label>
-                        <input type="checkbox" id="show-definition" class="settings-checkbox">
+
+                <div id="wordlist-tab" class="settings-tab-content">
+                    <div class="settings-section">
+                        <h3>单词表管理</h3>
+                        <div class="settings-option">
+                            <p>单词表管理功能即将推出</p>
+                        </div>
                     </div>
                 </div>
-                <div class="settings-section">
-                    <h3>主题设置</h3>
-                    <div class="settings-option">
-                        <button id="light-mode-setting" class="settings-theme-btn">亮色主题</button>
-                        <button id="dark-mode-setting" class="settings-theme-btn">暗色主题</button>
-                        <button id="system-theme-setting" class="settings-theme-btn">跟随系统</button>
+
+                <div id="about-tab" class="settings-tab-content">
+                    <div class="settings-section">
+                        <h3>关于Word Memory</h3>
+                        <div class="settings-option">
+                            <p>版本: 1.0.0</p>
+                        </div>
+                        <div class="settings-option">
+                            <p>开发者: <a href="https://github.com/xglight">xglight</a></p>
+                        </div>
+                        <div class="settings-option">
+                            <p>Github 仓库: <a
+                                    href="https://github.com/xglight/word-memory">https://github.com/xglight/word-memory</a>
+                            </p>
+                        </div>
+                        <div class="settings-option">
+                            <p>开源许可证：<a href="https://github.com/xglight/word-memory/blob/main/LICENSE">MIT ©
+                                    xglight</a>
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

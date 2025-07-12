@@ -1,5 +1,24 @@
 const { contextBridge, ipcRenderer } = require('electron')
 
+// 拦截所有链接点击，通过主进程在外部浏览器打开
+document.addEventListener('DOMContentLoaded', () => {
+  document.body.addEventListener('click', (e) => {
+    let target = e.target
+    // 向上查找a标签
+    while (target && target.tagName !== 'A' && target !== document.body) {
+      target = target.parentElement
+    }
+
+    if (target && target.tagName === 'A' && target.href) {
+      e.preventDefault()
+      e.stopPropagation()
+      ipcRenderer.invoke('open-external', target.href).catch(err => {
+        console.error('打开外部链接失败:', err)
+      })
+    }
+  })
+})
+
 contextBridge.exposeInMainWorld('wordMemoryAPI', {
   // 最小化窗口
   minimize: async () => ipcRenderer.invoke('window:minimize'),
@@ -23,10 +42,14 @@ contextBridge.exposeInMainWorld('wordMemoryAPI', {
   getWordCurrentList: async () => ipcRenderer.invoke('getWordCurrentList'),
   // 修改当前单词表
   setCurrentWordList: async (wordList) => ipcRenderer.invoke('setCurrentWordList', wordList),
+  // 修改单词表状态
+  toggleWordListState: async (wordList, visible) => ipcRenderer.invoke('toggleWordListState', wordList),
   // 获取单词列表
-  getWords: async (page = 0, pageSize = 20) => ipcRenderer.invoke('getWords', page, pageSize),
+  getWords: async (searchTerm = '', page = 0, pageSize = 20) => ipcRenderer.invoke('getWords', searchTerm, page, pageSize),
   // 获取 config
   getConfig: async () => ipcRenderer.invoke('getConfig'),
+  //修改 word
+  setWord: async (word) => ipcRenderer.invoke('setWord', { word }),
   // 修改 definition
   setDefinition: async (definition) => ipcRenderer.invoke('setDefinition', { definition }),
   // 修改 sound-type
@@ -41,4 +64,5 @@ contextBridge.exposeInMainWorld('wordMemoryAPI', {
   changeEasy: async (word) => ipcRenderer.invoke('changeEasy', word),
   // 标记为困难
   changeHard: async (word) => ipcRenderer.invoke('changeHard', word),
+  // 搜索单词
 })

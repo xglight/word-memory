@@ -1,7 +1,8 @@
 {
   "words": {
     "size": 14,
-    "definition": "none"
+    "word": "none",
+    "definition": "block"
   },
   "sound": {
     "speed": 175,
@@ -11,10 +12,22 @@
     "path": "wordlist",
     "default": "college_entrance_examination",
     "lists": [
-      "love",
-      "easy",
-      "hard",
-      "college_entrance_examination"
+      {
+        "name": "college_entrance_examination",
+        "enable": true
+      },
+      {
+        "name": "love",
+        "enable": true
+      },
+      {
+        "name": "easy",
+        "enable": true
+      },
+      {
+        "name": "hard",
+        "enable": true
+      }
     ]
   },
   "theme": {

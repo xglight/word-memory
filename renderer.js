@@ -20,6 +20,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const voiceTypeSelect = document.getElementById('voice-type')
     const lightBtn = document.getElementById('light-mode-btn')
     const darkBtn = document.getElementById('dark-mode-btn')
+    const wordSearch = document.getElementById('word-search')
+    const showWordBtn = document.getElementById('show-word-btn')
 
     // 加载单词列表
     let words = []
@@ -29,6 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const pageSize = 20
     let totalWords = 0
     let currentMode
+    let searchText = ''
 
     async function init() {
         await loadConfig()
@@ -43,11 +46,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         config = await window.wordMemoryAPI.getConfig()
     }
 
-
     async function loadWords() {
         try {
             console.log('Loading words...')
-            const response = await window.wordMemoryAPI.getWords(currentPage, pageSize)
+            const response = await window.wordMemoryAPI.getWords(searchText, currentPage, pageSize)
             words = response.words
             totalWords = response.total
             showCurrentWord()
@@ -77,13 +79,87 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function loadWordLists() {
         try {
             console.log('Loading word lists...')
+            // 清空
+            wordListSelect.innerHTML = ''
+
             const wordLists = await window.wordMemoryAPI.getWordLists()
+
             // 动态创建单词列表选项
             for (let i = 0; i < wordLists.length; i++) {
+                if (wordLists[i].enable === false) continue
                 const option = document.createElement('option')
                 option.value = wordLists[i].value
                 option.textContent = wordLists[i].name
                 wordListSelect.appendChild(option)
+            }
+
+            // 动态生成单词表管理表格
+            const wordlistTab = document.getElementById('wordlist-tab')
+            if (wordlistTab) {
+                wordlistTab.innerHTML = `
+                    <div class="settings-section">
+                        <h3>单词表管理</h3>
+                        <div class="wordlist-table-container">
+                            <table class="wordlist-table">
+                                <thead>
+                                    <tr>
+                                        <th>单词表名称</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${wordLists.map(list => `
+                                        <tr>
+                                            <td>${list.name}</td>
+                                            <td>
+                                                <button class="table-button" id="load-btn" data-list="${list.value}">加载</button>
+                                                <button class="table-button" id="state-btn" data-list="${list.value}">${list.enable ? '隐藏' : '显示'}</button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+
+                // 获取所有按钮并添加事件监听
+                document.querySelectorAll('#load-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        try {
+                            const list = e.target.dataset.list
+                            console.log('正在加载单词表:', list)
+                            await window.wordMemoryAPI.setCurrentWordList(list)
+                            console.log('单词表加载成功')
+                            await loadWordList()
+                        } catch (err) {
+                            console.error('加载单词表失败:', err)
+                            e.target.style.animation = 'shake 0.5s'
+                            setTimeout(() => {
+                                e.target.style.animation = ''
+                            }, 500)
+                        }
+                    })
+                })
+
+                document.querySelectorAll('#state-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        try {
+                            const list = e.target.dataset.list
+                            console.log('切换单词表状态:', list)
+                            const enable = await window.wordMemoryAPI.toggleWordListState(list)
+                            console.log('单词表状态更新:', enable ? '显示' : '隐藏')
+                            e.target.textContent = enable ? '隐藏' : '显示'
+                            await loadWordLists()
+                        } catch (err) {
+                            console.error('切换单词表状态失败:', err)
+                            e.target.style.animation = 'shake 0.5s'
+                            setTimeout(() => {
+                                e.target.style.animation = ''
+                            }, 500)
+                        }
+                    })
+                })
             }
         } catch (err) {
             console.error('Failed to load word lists:', err)
@@ -111,7 +187,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // 使用分页方式获取所有单词
             let allWords = []
 
-            const response = await window.wordMemoryAPI.getWords(currentPage, pageSize)
+            const response = await window.wordMemoryAPI.getWords(searchText, currentPage, pageSize)
             console.log(`Loaded page ${currentPage} with ${response.words.length} words`)
 
             allWords = allWords.concat(response.words)
@@ -135,7 +211,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             // 创建列表项
             allWords.forEach((word, index) => {
                 const li = document.createElement('li')
-                li.textContent = word.word
+                if (config.words.word === 'none')
+                    li.textContent = '已隐藏'
+                else li.textContent = word.word
                 li.dataset.index = index
 
                 // 高亮当前单词
@@ -241,7 +319,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         wordElement.textContent = word.word
         // 拼接 definition
         let definition = word.definition.join('<br>')
-        definitionElement.style.display = 'block'
         definitionElement.innerHTML = definition
 
         // 拼接 phonetic
@@ -249,14 +326,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         for (let i = 0; i < word.phonetic.length; i++)
             phonetic += word.phonetic[i] + ' '
         phoneticElement.textContent = phonetic
+        phoneticElement.style.display = config.words.phonetic
 
         // 更新单词序号显示
         wordIndexElement.textContent = `${currentIndex + 1}/${words.length}`
 
         // 默认释义
         definitionElement.style.display = config.words.definition
+        wordElement.style.display = config.words.word
+        phoneticElement.style.display = config.words.word
 
         flipBtn.textContent = definitionElement.style.display === 'none' ? '显示释义' : '隐藏释义'
+        showWordBtn.textContent = wordElement.style.display === 'none' ? '显示单词' : '隐藏单词'
 
         // 更新按钮状态
         if (word.love) {
@@ -264,7 +345,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             lovebtn.classList.remove('active')
         }
-
         if (word.easy) {
             easyBtn.classList.add('active')
         } else {
@@ -289,6 +369,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         const show = definitionElement.style.display === 'none'
         definitionElement.style.display = show ? 'block' : 'none'
         flipBtn.textContent = show ? '隐藏释义' : '显示释义'
+    })
+
+    // 显示单词按钮
+
+    showWordBtn.addEventListener('click', () => {
+        const show = wordElement.style.display === 'none'
+        wordElement.style.display = show ? 'block' : 'none'
+        phoneticElement.style.display = show ? 'block' : 'none'
+        showWordBtn.textContent = show ? '隐藏单词' : '显示单词'
     })
 
     // 上一个单词
@@ -488,7 +577,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                         closeSettingsBtn.click()
                     else settingsBtn.click()
                     break
+                case 'z':
+                    showWordBtn.click()
+                    break
             }
+        } else if (event.key === 'Escape' && settingsOverlay.classList.contains('active')) {
+            closeSettingsBtn.click()
+            event.preventDefault()
         }
     })
 
@@ -502,8 +597,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     const darkModeSetting = document.getElementById('dark-mode-setting')
     const systemModeSetting = document.getElementById('system-theme-setting')
     const definationBox = document.getElementById('show-definition')
+    const wordBox = document.getElementById('show-word')
+
+    // 选项卡切换功能
+    function setupTabs() {
+        const tabs = document.querySelectorAll('.settings-tab');
+        const tabContents = document.querySelectorAll('.settings-tab-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // 移除所有选项卡的active类
+                tabs.forEach(t => t.classList.remove('active'));
+                // 添加当前选项卡的active类
+                tab.classList.add('active');
+
+                // 隐藏所有内容
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                });
+
+                // 显示当前选项卡对应的内容
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(`${tabId}-tab`).classList.add('active');
+            });
+        });
+    }
 
     async function settingInit() {
+        setupTabs();
         try {
             // 确保config已加载
             if (!config) {
@@ -515,6 +636,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // 初始化定义显示设置
             showDefinitionSetting.checked = config.words.definition === 'block'
+            definationBox.checked = config.words.definition === 'block'
+            // 初始化单词显示设置
+            wordBox.checked = config.words.word === 'block'
 
             // 初始化主题模式设置
             const currentMode = await window.wordMemoryAPI.getMode()
@@ -561,11 +685,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         showCurrentWord()
     })
 
+    wordBox.addEventListener('change', async () => {
+        config.words.word = wordBox.checked ? 'block' : 'none'
+        await window.wordMemoryAPI.setWord(config.words.word)
+        await loadWordList()
+        showCurrentWord()
+    })
+
     voiceTypeSetting.addEventListener('change', async () => {
         config.sound.type = voiceTypeSetting.value
         voiceTypeSelect.value = voiceTypeSetting.value
         await window.wordMemoryAPI.setSoundType(config.sound.type)
         showCurrentWord()
+    })
+
+    wordSearch.addEventListener('input', async (e) => {
+        searchText = wordSearch.value.trim()
+        currentPage = 0
+        await loadWordList()
     })
 
     await init()
