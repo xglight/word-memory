@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', async () => {
+    const inputBox = document.getElementById('input-box');
     // 获取DOM元素
     const minimizeBtn = document.getElementById('minimize-btn')
     const maximizeBtn = document.getElementById('maximize-btn')
@@ -300,6 +301,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 显示当前单词
     function showCurrentWord() {
+        // 清除输入框内容
+        inputBox.textContent = '';
+        newInput = ''
+
         if (words.length === 0) {
             wordElement.textContent = '无单词数据'
             wordIndexElement.textContent = '0/0'
@@ -338,6 +343,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         flipBtn.textContent = definitionElement.style.display === 'none' ? '显示释义' : '隐藏释义'
         showWordBtn.textContent = wordElement.style.display === 'none' ? '显示单词' : '隐藏单词'
+        inputBox.style.display = wordElement.style.display === 'none' ? 'block' : 'none'
 
         // 更新按钮状态
         if (word.love) {
@@ -374,10 +380,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 显示单词按钮
 
     showWordBtn.addEventListener('click', () => {
+        newInput = ''
+        inputBox.textContent = '';
         const show = wordElement.style.display === 'none'
         wordElement.style.display = show ? 'block' : 'none'
         phoneticElement.style.display = show ? 'block' : 'none'
         showWordBtn.textContent = show ? '隐藏单词' : '显示单词'
+        inputBox.style.display = show ? 'none' : 'block'
     })
 
     // 上一个单词
@@ -547,7 +556,68 @@ document.addEventListener('DOMContentLoaded', async () => {
     })
 
     // 添加快捷键支持：左右箭头导航和功能按钮快捷键
+    let isErrorState = false;
+    let newInput = '';
+
     document.addEventListener('keydown', (event) => {
+        // 处理字母、数字按键、退格键和回车键
+        if (!event.ctrlKey && !event.altKey && !event.metaKey) {
+            if (wordElement.style.display === 'block') {
+                if (event.key.length === 1 && /[a-zA-Z0-9]/.test(event.key)) {
+                    const currentWord = words[currentIndex]?.word || '';
+                    if (newInput.length <= currentWord.length) newInput += event.key;
+                    let newContent = '';
+                    // 构建带有颜色标记的内容
+                    for (let i = 0; i < currentWord.length; i++) {
+                        if (i < newInput.length) {
+                            const isCorrect = currentWord[i] === newInput[i];
+                            newContent += `<span style="color:${isCorrect ? 'green' : 'red'}">${newInput[i]}</span>`;
+                        } else {
+                            newContent += `<span style="color:white">${currentWord[i]}</span>`; // 未输入部分显示白色
+                        }
+                    }
+                    wordElement.innerHTML = newContent;
+                    event.preventDefault();
+                } else if (event.key === 'Backspace') {
+                    const currentWord = words[currentIndex]?.word || '';
+                    newInput = newInput.slice(0, -1);
+                    let newContent = '';
+                    // 构建带有颜色标记的内容
+                    for (let i = 0; i < currentWord.length; i++) {
+                        if (i < newInput.length) {
+                            const isCorrect = currentWord[i] === newInput[i];
+                            newContent += `<span style="color:${isCorrect ? 'green' : 'red'}">${newInput[i]}</span>`;
+                        } else {
+                            newContent += `<span style="color:white">${currentWord[i]}</span>`; // 未输入部分显示白色
+                        }
+                    }
+                    wordElement.innerHTML = newContent;
+                    event.preventDefault();
+                }
+            } else {
+                if (isErrorState && event.key !== 'Enter') {
+                    // 错误状态下按任何键先清除内容
+                    inputBox.textContent = '';
+                    inputBox.style.color = '';
+                    isErrorState = false;
+                }
+                if (event.key === 'Backspace') {
+                    inputBox.textContent = inputBox.textContent.slice(0, -1);
+                    event.preventDefault();
+                } else if (event.key === 'Enter') {
+                    // 比对输入内容与当前单词
+                    const currentWord = words[currentIndex]?.word || '';
+                    const isCorrect = inputBox.textContent === currentWord;
+                    inputBox.style.color = isCorrect ? 'green' : 'red';
+                    isErrorState = !isCorrect; // 设置错误状态
+                    event.preventDefault();
+                } else if (event.key.length === 1 && /[a-zA-Z0-9]/.test(event.key)) {
+                    inputBox.textContent += event.key;
+                    inputBox.style.color = ''; // 重置颜色
+                    event.preventDefault();
+                }
+            }
+        }
         if (event.key === 'ArrowLeft') {
             prevBtn.click()
         } else if (event.key === 'ArrowRight') {
