@@ -1,0 +1,15 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 渐变定义 -->
+    <defs>
+        <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#007bff;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#0056b3;stop-opacity:1" />
+        </linearGradient>
+    </defs>
+
+    <!-- 书本图标 (128x128版本) -->
+    <g transform="translate(16, 16)" fill="none">
+        <path d="M48 8L8 28l40 20 40-20-40-20zM8 68l40 20 40-20M8 48l40 20 40-20" stroke="url(#iconGradient)"
+            stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+    </g>
+</svg>

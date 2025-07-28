@@ -1,16 +1,18 @@
 {
   "words": {
     "size": 14,
-    "word": "block",
-    "definition": "none"
+    "definition": "none",
+    "typing": true,
+    "dictation": true,
+    "word": "block"
   },
   "sound": {
     "speed": 175,
     "type": "en"
   },
   "wordLists": {
-    "path": "wordlist",
     "default": "college_entrance_examination",
+    "path": ".\\wordlist",
     "lists": [
       {
         "name": "college_entrance_examination",

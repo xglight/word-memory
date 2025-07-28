@@ -94,77 +94,174 @@ document.addEventListener('DOMContentLoaded', async () => {
                 wordListSelect.appendChild(option)
             }
 
-            // 动态生成单词表管理表格
-            const wordlistTab = document.getElementById('wordlist-tab')
-            if (wordlistTab) {
-                wordlistTab.innerHTML = `
-                    <div class="settings-section">
-                        <h3>单词表管理</h3>
-                        <div class="wordlist-table-container">
-                            <table class="wordlist-table">
-                                <thead>
-                                    <tr>
-                                        <th>单词表名称</th>
-                                        <th>操作</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${wordLists.map(list => `
-                                        <tr>
-                                            <td>${list.name}</td>
-                                            <td>
-                                                <button class="table-button" id="load-btn" data-list="${list.value}">加载</button>
-                                                <button class="table-button" id="state-btn" data-list="${list.value}">${list.enable ? '隐藏' : '显示'}</button>
-                                            </td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                `;
-
-                // 获取所有按钮并添加事件监听
-                document.querySelectorAll('#load-btn').forEach(btn => {
-                    btn.addEventListener('click', async (e) => {
-                        try {
-                            const list = e.target.dataset.list
-                            console.log('正在加载单词表:', list)
-                            await window.wordMemoryAPI.setCurrentWordList(list)
-                            console.log('单词表加载成功')
-                            await loadWordList()
-                        } catch (err) {
-                            console.error('加载单词表失败:', err)
-                            e.target.style.animation = 'shake 0.5s'
-                            setTimeout(() => {
-                                e.target.style.animation = ''
-                            }, 500)
-                        }
-                    })
-                })
-
-                document.querySelectorAll('#state-btn').forEach(btn => {
-                    btn.addEventListener('click', async (e) => {
-                        try {
-                            const list = e.target.dataset.list
-                            console.log('切换单词表状态:', list)
-                            const enable = await window.wordMemoryAPI.toggleWordListState(list)
-                            console.log('单词表状态更新:', enable ? '显示' : '隐藏')
-                            e.target.textContent = enable ? '隐藏' : '显示'
-                            await loadWordLists()
-                        } catch (err) {
-                            console.error('切换单词表状态失败:', err)
-                            e.target.style.animation = 'shake 0.5s'
-                            setTimeout(() => {
-                                e.target.style.animation = ''
-                            }, 500)
-                        }
-                    })
-                })
-            }
+            // 更新单词表管理界面
+            await updateWordListManagement()
         } catch (err) {
             console.error('Failed to load word lists:', err)
         }
+    }
+
+    // 新增：更新单词表管理界面的函数
+    async function updateWordListManagement() {
+        try {
+            const wordLists = await window.wordMemoryAPI.getWordLists()
+            const currentList = await window.wordMemoryAPI.getWordCurrentList()
+            const wordlistTable = document.querySelector('.wordlist-table')
+
+            if (!wordlistTable) {
+                console.error('Wordlist table not found')
+                return
+            }
+
+            // 清空现有表格内容
+            wordlistTable.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>单词表名称</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${wordLists.map(list => {
+                const isCurrentList = list.value === currentList
+                const isEnabled = list.enable
+
+                return `
+                            <tr>
+                                <td>${list.name}${isCurrentList ? ' (当前)' : ''}</td>
+                                <td>
+                                    <span class="status-badge ${isEnabled ? 'enabled' : 'disabled'}">
+                                        ${isEnabled ? '启用' : '禁用'}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="table-button load-btn" data-list="${list.value}" 
+                                        ${!isEnabled ? 'disabled' : ''} 
+                                        title="${!isEnabled ? '禁用的单词表无法加载' : '加载此单词表'}">
+                                        加载
+                                    </button>
+                                    <button class="table-button state-btn" data-list="${list.value}" 
+                                        ${isCurrentList ? 'disabled' : ''} 
+                                        title="${isCurrentList ? '当前启用的单词表无法禁用' : (isEnabled ? '禁用' : '启用') + '此单词表'}">
+                                        ${isEnabled ? '禁用' : '启用'}
+                                    </button>
+                                    <button class="table-button edit-btn" data-list="${list.value}" title="编辑此单词表">编辑</button>
+                                </td>
+                            </tr>
+                        `
+            }).join('')}
+                </tbody>
+            `
+
+            // 添加事件监听器
+            addWordListEventListeners()
+        } catch (err) {
+            console.error('Failed to update word list management:', err)
+        }
+    }
+
+    // 新增：添加单词表事件监听器
+    function addWordListEventListeners() {
+        // 加载按钮事件
+        document.querySelectorAll('.load-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                // 检查按钮是否被禁用
+                if (e.target.disabled) {
+                    return
+                }
+
+                try {
+                    const list = e.target.dataset.list
+                    console.log('正在加载单词表:', list)
+                    await window.wordMemoryAPI.setCurrentWordList(list)
+                    console.log('单词表加载成功')
+                    await loadWordList()
+
+                    // 显示成功反馈
+                    e.target.textContent = '已加载'
+                    e.target.style.backgroundColor = 'var(--success-color)'
+                    setTimeout(() => {
+                        e.target.textContent = '加载'
+                        e.target.style.backgroundColor = ''
+                    }, 1000)
+
+                    // 重新更新单词表管理界面以反映当前状态
+                    await updateWordListManagement()
+                } catch (err) {
+                    console.error('加载单词表失败:', err)
+                    e.target.style.animation = 'shake 0.5s'
+                    setTimeout(() => {
+                        e.target.style.animation = ''
+                    }, 500)
+                }
+            })
+        })
+
+        // 状态切换按钮事件
+        document.querySelectorAll('.state-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                // 检查按钮是否被禁用
+                if (e.target.disabled) {
+                    return
+                }
+
+                try {
+                    const list = e.target.dataset.list
+                    console.log('切换单词表状态:', list)
+                    const enable = await window.wordMemoryAPI.toggleWordListState(list)
+                    console.log('单词表状态更新:', enable ? '启用' : '禁用')
+
+                    // 重新加载单词列表选择器
+                    await loadWordLists()
+
+                    // 重新更新单词表管理界面以反映新状态
+                    await updateWordListManagement()
+                } catch (err) {
+                    console.error('切换单词表状态失败:', err)
+                    e.target.style.animation = 'shake 0.5s'
+                    setTimeout(() => {
+                        e.target.style.animation = ''
+                    }, 500)
+                }
+            })
+        })
+
+        // 编辑按钮事件
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const listValue = e.target.dataset.list
+                try {
+                    const wordLists = await window.wordMemoryAPI.getWordLists()
+                    const currentList = wordLists.find(l => l.value === listValue)
+                    if (!currentList) {
+                        alert('未找到该单词表')
+                        return
+                    }
+
+                    const data = await window.wordMemoryAPI.getWordListFile(listValue)
+                    // 渲染到自定义弹窗
+                    const overlay = document.getElementById('wordlist-edit-overlay')
+                    const title = document.getElementById('wordlist-edit-title')
+                    const name = document.getElementById('wordlist-edit-name')
+                    const list = document.getElementById('wordlist-edit-list')
+
+                    title.textContent = '单词表编辑'
+                    name.textContent = data.name || listValue
+                    list.innerHTML = ''
+
+                        ; (data.words || []).forEach(word => {
+                            const li = document.createElement('li')
+                            li.textContent = word
+                            list.appendChild(li)
+                        })
+
+                    overlay.classList.add('active')
+                } catch (err) {
+                    alert('读取单词表失败: ' + err.message)
+                }
+            })
+        })
     }
 
     async function loadWordList() {
@@ -212,9 +309,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             // 创建列表项
             allWords.forEach((word, index) => {
                 const li = document.createElement('li')
-                if (config.words.word === 'none')
+                // 根据单词显示设置来决定显示内容
+                if (config.words.word === 'none') {
                     li.textContent = '已隐藏'
-                else li.textContent = word.word
+                    li.style.color = 'var(--text-muted)'
+                    li.style.fontStyle = 'italic'
+                } else {
+                    li.textContent = word.word
+                    li.style.color = ''
+                    li.style.fontStyle = ''
+                }
                 li.dataset.index = index
 
                 // 高亮当前单词
@@ -379,7 +483,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 显示单词按钮
 
-    showWordBtn.addEventListener('click', () => {
+    showWordBtn.addEventListener('click', async () => {
         newInput = ''
         inputBox.textContent = '';
         const show = wordElement.style.display === 'none'
@@ -387,6 +491,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         phoneticElement.style.display = show ? 'block' : 'none'
         showWordBtn.textContent = show ? '隐藏单词' : '显示单词'
         inputBox.style.display = show ? 'none' : 'block'
+
+        // 更新配置并重新渲染单词列表
+        config.words.word = show ? 'block' : 'none'
+        await window.wordMemoryAPI.setWord(config.words.word)
+        await renderWordList()
     })
 
     // 上一个单词
@@ -560,9 +669,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     let newInput = '';
 
     document.addEventListener('keydown', (event) => {
+        // 如果事件目标是搜索框或其子元素，则不处理
+        if (event.target.closest('#word-search')) {
+            return;
+        }
         // 处理字母、数字按键、退格键和回车键
         if (!event.ctrlKey && !event.altKey && !event.metaKey) {
-            if (wordElement.style.display === 'block') {
+            if (wordElement.style.display === 'block' && config.words.typing) {
                 if (event.key.length === 1 && /[a-zA-Z0-9]/.test(event.key)) {
                     const currentWord = words[currentIndex]?.word || '';
                     if (newInput.length <= currentWord.length) newInput += event.key;
@@ -594,7 +707,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     wordElement.innerHTML = newContent;
                     event.preventDefault();
                 }
-            } else {
+            } else if (config.words.dictation) {
                 if (isErrorState && event.key !== 'Enter') {
                     // 错误状态下按任何键先清除内容
                     inputBox.textContent = '';
@@ -668,6 +781,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const systemModeSetting = document.getElementById('system-theme-setting')
     const definationBox = document.getElementById('show-definition')
     const wordBox = document.getElementById('show-word')
+    const enableTypingSetting = document.getElementById('enable-typing')
+    const enableDictationSetting = document.getElementById('enable-dictation')
 
     // 选项卡切换功能
     function setupTabs() {
@@ -709,6 +824,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             definationBox.checked = config.words.definition === 'block'
             // 初始化单词显示设置
             wordBox.checked = config.words.word === 'block'
+
+            // 初始化打字练习设置
+            enableTypingSetting.checked = config.words.typing
+            // 初始化默写练习设置
+            enableDictationSetting.checked = config.words.dictation
 
             // 初始化主题模式设置
             const currentMode = await window.wordMemoryAPI.getMode()
@@ -762,6 +882,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         showCurrentWord()
     })
 
+    enableTypingSetting.addEventListener('change', async () => {
+        config.words.typing = enableTypingSetting.checked
+        await window.wordMemoryAPI.setEnableTyping(config.words.typing)
+    })
+
+    enableDictationSetting.addEventListener('change', async () => {
+        config.words.dictation = enableDictationSetting.checked
+        await window.wordMemoryAPI.setEnableDictation(config.words.dictation)
+    })
+
     voiceTypeSetting.addEventListener('change', async () => {
         config.sound.type = voiceTypeSetting.value
         voiceTypeSelect.value = voiceTypeSetting.value
@@ -774,6 +904,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentPage = 0
         await loadWordList()
     })
+
+    // 关闭单词表编辑弹窗
+    document.getElementById('close-wordlist-edit-btn').addEventListener('click', () => {
+        document.getElementById('wordlist-edit-overlay').classList.remove('active');
+    });
 
     await init()
 })

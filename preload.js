@@ -54,6 +54,10 @@ contextBridge.exposeInMainWorld('wordMemoryAPI', {
   setDefinition: async (definition) => ipcRenderer.invoke('setDefinition', { definition }),
   // 修改 sound-type
   setSoundType: async (type) => ipcRenderer.invoke('setSoundType', { type }),
+  // 修改打字练习
+  setEnableTyping: async (enable) => ipcRenderer.invoke('setEnableTyping', { enable }),
+  // 修改默写练习
+  setEnableDictation: async (enable) => ipcRenderer.invoke('setEnableDictation', { enable }),
   // 修改默认主题
   setDefaultTheme: async (theme) => ipcRenderer.invoke('setDefaultTheme', { theme }),
   // 朗读单词
@@ -64,5 +68,6 @@ contextBridge.exposeInMainWorld('wordMemoryAPI', {
   changeEasy: async (word) => ipcRenderer.invoke('changeEasy', word),
   // 标记为困难
   changeHard: async (word) => ipcRenderer.invoke('changeHard', word),
-  // 搜索单词
+  // 获取指定单词表文件内容
+  getWordListFile: async (value) => ipcRenderer.invoke('getWordListFile', value),
 })

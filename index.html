@@ -11,8 +11,8 @@
 </head>
 
 <body>
-    <div class="titlebar">
-        <div class="title">Word-Memory</div>
+    <div class="window-titlebar">
+        <div class="title"> Word-Memory </div>
         <div class="window-controls">
             <button id="minimize-btn" title="最小化">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -32,13 +32,14 @@
             </button>
         </div>
     </div>
-    <div class="selector-container">
-        <div>
+
+    <div class="titlebar">
+        <div class="titlebar-left">
             <select id="wordlist-selector"></select>
-            <select id="page-selector" style="margin-left: 10px;"></select>
-            <input type="text" id="word-search" placeholder="搜索单词..." style="margin-left: 10px;">
+            <select id="page-selector"></select>
+            <input type="text" id="word-search" placeholder="搜索单词...">
         </div>
-        <div class="additional-btn-container">
+        <div class="titlebar-right">
             <button id="light-mode-btn" class="additional-btn theme-btn active" title="亮色模式">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
@@ -53,12 +54,14 @@
                     <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
                 </svg>
             </button>
+
             <button id="dark-mode-btn" class="additional-btn theme-btn" title="暗色模式">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                 </svg>
             </button>
+
             <button id="settings-btn" class="additional-btn" title="设置 ctrl+i">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
@@ -70,6 +73,7 @@
             </button>
         </div>
     </div>
+
     <div id="app">
         <div class="main-content">
             <div id="word-card">
@@ -130,14 +134,14 @@
                     </button>
                 </div>
             </div>
-
-            <div class="controls">
+            <div class="control-buttons">
                 <button id="prev-btn" title="left arrow">上一个</button>
                 <button id="show-word-btn" title="ctrl+z">显示单词</button>
                 <button id="flip-btn" title="space">显示释义</button>
                 <button id="next-btn" title="right arrow">下一个</button>
             </div>
         </div>
+
 
         <div class="word-list-container">
             <h3>单词列表</h3>
@@ -152,7 +156,7 @@
     <!-- 设置界面 -->
     <div id="settings-overlay" class="settings-overlay">
         <div class="settings-container">
-            <div class="settings-header">
+            <div class="settings-titlebar">
                 <h2>设置</h2>
                 <button id="close-settings-btn" class="close-settings-btn">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -161,13 +165,14 @@
                     </svg>
                 </button>
             </div>
-            <div class="settings-content">
-                <div class="settings-tabs">
-                    <button class="settings-tab active" data-tab="basic">基本设置</button>
-                    <button class="settings-tab" data-tab="wordlist">单词表设置</button>
-                    <button class="settings-tab" data-tab="about">关于</button>
-                </div>
 
+            <div class="settings-tabs">
+                <button class="settings-tab active" data-tab="basic">基本设置</button>
+                <button class="settings-tab" data-tab="wordlist">单词表设置</button>
+                <button class="settings-tab" data-tab="about">关于</button>
+            </div>
+
+            <div class="settings-content">
                 <div id="basic-tab" class="settings-tab-content active">
                     <div class="settings-section">
                         <h3>发音设置</h3>
@@ -178,6 +183,17 @@
                                 <option value="en-us">美式发音</option>
                                 <option value="zh">中文发音</option>
                             </select>
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <h3>功能设置</h3>
+                        <div class="settings-option">
+                            <label for="enable-typing">启用打字练习:</label>
+                            <input type="checkbox" id="enable-typing" class="settings-checkbox">
+                        </div>
+                        <div class="settings-option">
+                            <label for="enable-dictation">启用默写练习:</label>
+                            <input type="checkbox" id="enable-dictation" class="settings-checkbox">
                         </div>
                     </div>
                     <div class="settings-section">
@@ -205,35 +221,138 @@
                     <div class="settings-section">
                         <h3>单词表管理</h3>
                         <div class="settings-option">
-                            <p>单词表管理功能即将推出</p>
+                            <table class="wordlist-table">
+                            </table>
                         </div>
                     </div>
                 </div>
 
                 <div id="about-tab" class="settings-tab-content">
-                    <div class="settings-section">
-                        <h3>关于Word Memory</h3>
-                        <div class="settings-option">
-                            <p>版本: 1.0.0</p>
+                    <div class="about-header">
+                        <div class="about-logo">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                            </svg>
                         </div>
-                        <div class="settings-option">
-                            <p>开发者: <a href="https://github.com/xglight">xglight</a></p>
+                        <h2 class="about-title">Word Memory</h2>
+                        <p class="about-subtitle">智能单词记忆助手</p>
+                    </div>
+
+                    <div class="about-features">
+                        <div class="about-feature">
+                            <div class="about-feature-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                    <line x1="12" y1="19" x2="12" y2="23"></line>
+                                    <line x1="8" y1="23" x2="16" y2="23"></line>
+                                </svg>
+                            </div>
+                            <div class="about-feature-title">语音朗读</div>
+                            <div class="about-feature-desc">支持多种发音</div>
                         </div>
-                        <div class="settings-option">
-                            <p>Github 仓库: <a
-                                    href="https://github.com/xglight/word-memory">https://github.com/xglight/word-memory</a>
-                            </p>
+                        <div class="about-feature">
+                            <div class="about-feature-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                            </div>
+                            <div class="about-feature-title">智能记忆</div>
+                            <div class="about-feature-desc">个性化学习</div>
                         </div>
-                        <div class="settings-option">
-                            <p>开源许可证：<a href="https://github.com/xglight/word-memory/blob/main/LICENSE">MIT ©
+                        <div class="about-feature">
+                            <div class="about-feature-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path
+                                        d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <div class="about-feature-title">收藏功能</div>
+                            <div class="about-feature-desc">重点单词收藏</div>
+                        </div>
+                    </div>
+
+                    <div class="about-info">
+                        <div class="about-info-item">
+                            <span class="about-info-label">版本</span>
+                            <span class="about-info-value">1.0.0</span>
+                        </div>
+                        <div class="about-info-item">
+                            <span class="about-info-label">开发者</span>
+                            <span class="about-info-value">
+                                <a href="https://github.com/xglight" target="_blank">xglight</a>
+                            </span>
+                        </div>
+                        <div class="about-info-item">
+                            <span class="about-info-label">开源协议</span>
+                            <span class="about-info-value">
+                                <a href="https://github.com/xglight/word-memory/blob/main/LICENSE" target="_blank">MIT ©
                                     xglight</a>
-                            </p>
+                            </span>
                         </div>
+                        <div class="about-info-item">
+                            <span class="about-info-label">构建时间</span>
+                            <span class="about-info-value">2025年</span>
+                        </div>
+                    </div>
+
+                    <div class="about-actions">
+                        <a href="https://github.com/xglight/word-memory" target="_blank" class="about-action-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path
+                                    d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22">
+                                </path>
+                            </svg>
+                            GitHub
+                        </a>
+                        <a href="https://github.com/xglight/word-memory/issues" target="_blank"
+                            class="about-action-btn secondary">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                            反馈问题
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+        <!-- 单词表编辑弹窗 -->
+        <div id="wordlist-edit-overlay" class="settings-overlay">
+            <div class="settings-container">
+                <div class="settings-titlebar">
+                    <h2 id="wordlist-edit-title">单词表编辑</h2>
+                    <button id="close-wordlist-edit-btn" class="close-settings-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="settings-content">
+                    <div class="settings-section">
+                        <h3 id="wordlist-edit-name">单词表名</h3>
+                        <div class="settings-option">
+                            <ul id="wordlist-edit-list"></ul>
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <div class="settings-option">
+                            <input id="wordlist-edit-input" type="text" placeholder="输入新单词...">
+                            <button id="wordlist-edit-add-btn">添加</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
 </body>
 
 </html>

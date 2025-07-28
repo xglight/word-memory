@@ -6,9 +6,10 @@ const fs = require('fs/promises')
 const execAsync = promisify(exec)
 const ESPEAK_PATH = path.join(__dirname, 'espeak', 'bin', 'espeak.exe')
 
+configPath = '.\\config.json'
 wordListsFolder = '.\\wordlist'
 
-let currentWordList = 'example'
+let currentWordList = 'college_entrance_examination'
 
 let words = {}, config
 
@@ -19,22 +20,25 @@ async function init() {
 
 async function readConfig() {
     try {
-        const data = await fs.readFile("config.json", 'utf-8')
+        const data = await fs.readFile(configPath, 'utf-8')
         config = JSON.parse(data)
     } catch (e) {
         console.error('读取配置文件错误:', e);
         config = {
             "words": {
                 "size": 14,
-                "definition": "none"
+                "definition": "block",
+                "typing": true,
+                "dictation": true,
+                "word": "none"
             },
             "sound": {
                 "speed": 175,
                 "type": "en"
             },
             "wordLists": {
-                "path": "wordlist",
                 "default": "college_entrance_examination",
+                "path": ".\\wordlist",
                 "lists": [
                     {
                         "name": "college_entrance_examination",
@@ -57,8 +61,11 @@ async function readConfig() {
             "theme": {
                 "mode": "system"
             }
+
         }
-        await fs.writeFile("config.json", JSON.stringify(config, null, 2))
+        await fs.writeFile(configPath, JSON.stringify(config, null, 2))
+        const data = await fs.readFile(configPath, 'utf-8')
+        config = JSON.parse(data)
     }
 
     currentWordList = config.wordLists.default
@@ -80,7 +87,7 @@ async function readConfig() {
         await fs.mkdir(wordListsFolder, { recursive: true })
     }
 
-    await fs.writeFile("config.json", JSON.stringify(config, null, 2))
+    await fs.writeFile(configPath, JSON.stringify(config, null, 2))
 }
 
 async function readWords() {
@@ -214,7 +221,7 @@ ipcMain.handle('getWordCurrentList', () => {
 ipcMain.handle('setCurrentWordList', async (event, wordList) => {
     currentWordList = wordList
     config.wordLists.default = wordList
-    await fs.writeFile("config.json", JSON.stringify(config, null, 2))
+    await fs.writeFile(configPath, JSON.stringify(config, null, 2))
     return true
 })
 
@@ -225,7 +232,7 @@ ipcMain.handle('toggleWordListState', async (event, wordList) => {
             enable = list.enable = !list.enable
         }
     })
-    await fs.writeFile("config.json", JSON.stringify(config, null, 2))
+    await fs.writeFile(configPath, JSON.stringify(config, null, 2))
     return enable
 })
 
@@ -264,23 +271,33 @@ ipcMain.handle('getConfig', () => {
 
 ipcMain.handle('setWord', async (event, word) => {
     config.words.word = word.word
-    await fs.writeFile("config.json", JSON.stringify(config, null, 2))
+    await fs.writeFile(configPath, JSON.stringify(config, null, 2))
 })
 
 ipcMain.handle('setDefinition', async (event, definition) => {
     config.words.definition = definition.definition
-    await fs.writeFile("config.json", JSON.stringify(config, null, 2))
+    await fs.writeFile(configPath, JSON.stringify(config, null, 2))
 })
 
 ipcMain.handle('setSoundType', async (event, type) => {
     config.sound.type = type.type
-    await fs.writeFile("config.json", JSON.stringify(config, null, 2))
+    await fs.writeFile(configPath, JSON.stringify(config, null, 2))
 })
 
 ipcMain.handle('setDefaultTheme', async (event, mode) => {
     config.theme.mode = mode.theme
     nativeTheme.themeSource = mode.theme
-    await fs.writeFile("config.json", JSON.stringify(config, null, 2))
+    await fs.writeFile(configPath, JSON.stringify(config, null, 2))
+})
+
+ipcMain.handle('setEnableTyping', async (event, enable) => {
+    config.words.typing = enable.enable
+    await fs.writeFile(configPath, JSON.stringify(config, null, 2))
+})
+
+ipcMain.handle('setEnableDictation', async (event, enable) => {
+    config.words.dictation = enable.enable
+    await fs.writeFile(configPath, JSON.stringify(config, null, 2))
 })
 
 ipcMain.handle('speak', async (event, params) => {
@@ -412,6 +429,16 @@ ipcMain.handle('open-external', (event, url) => {
     shell.openExternal(url)
 })
 
+ipcMain.handle('getWordListFile', async (event, value) => {
+    const filePath = path.join(wordListsFolder, value + '.json');
+    try {
+        const data = await fs.readFile(filePath, 'utf-8');
+        return JSON.parse(data);
+    } catch (err) {
+        console.error('读取单词表文件失败:', err);
+        throw err;
+    }
+});
 
 app.whenReady().then(async () => {
     createWindow()
